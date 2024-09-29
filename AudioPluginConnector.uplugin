@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "AudioPluginConnector",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "nErumin",
+	"CreatedByURL": "https://github.com/nErumin",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "AudioPluginConnector",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}

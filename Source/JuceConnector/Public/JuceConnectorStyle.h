@@ -4,7 +4,7 @@
 #include "Styling/SlateStyle.h"
 
 /**  */
-class FAudioPluginConnectorStyle
+class FJuceConnectorStyle
 {
 public:
 

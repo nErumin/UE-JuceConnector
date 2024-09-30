@@ -2,11 +2,11 @@ using System.IO;
 using Microsoft.Extensions.Logging;
 using UnrealBuildTool;
 
-public class AudioPluginConnector : ModuleRules
+public class JuceConnector : ModuleRules
 {
 	private string ThirdPartyDirectory => Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "ThirdParty"));
 
-	public AudioPluginConnector(ReadOnlyTargetRules Target) : base(Target)
+	public JuceConnector(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		CppStandard = CppStandardVersion.Cpp20;

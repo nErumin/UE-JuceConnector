@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "AudioPluginConnectorStyle.h"
+#include "JuceConnectorStyle.h"
 #include "Styling/SlateStyleRegistry.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Slate/SlateGameResources.h"
@@ -9,9 +9,9 @@
 
 #define RootToContentDir Style->RootToContentDir
 
-TSharedPtr<FSlateStyleSet> FAudioPluginConnectorStyle::StyleInstance = nullptr;
+TSharedPtr<FSlateStyleSet> FJuceConnectorStyle::StyleInstance = nullptr;
 
-void FAudioPluginConnectorStyle::Initialize()
+void FJuceConnectorStyle::Initialize()
 {
 	if (!StyleInstance.IsValid())
 	{
@@ -20,14 +20,14 @@ void FAudioPluginConnectorStyle::Initialize()
 	}
 }
 
-void FAudioPluginConnectorStyle::Shutdown()
+void FJuceConnectorStyle::Shutdown()
 {
 	FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
 	ensure(StyleInstance.IsUnique());
 	StyleInstance.Reset();
 }
 
-FName FAudioPluginConnectorStyle::GetStyleSetName()
+FName FJuceConnectorStyle::GetStyleSetName()
 {
 	static FName StyleSetName(TEXT("AudioPluginConnectorStyle"));
 	return StyleSetName;
@@ -36,17 +36,17 @@ FName FAudioPluginConnectorStyle::GetStyleSetName()
 const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
 
-TSharedRef< FSlateStyleSet > FAudioPluginConnectorStyle::Create()
+TSharedRef< FSlateStyleSet > FJuceConnectorStyle::Create()
 {
-	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("AudioPluginConnectorStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("AudioPluginConnector")->GetBaseDir() / TEXT("Resources"));
+	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("JuceConnectorStyle"));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("JuceConnector")->GetBaseDir() / TEXT("Resources"));
 
-	Style->Set("AudioPluginConnector.OpenPluginWindow", new IMAGE_BRUSH_SVG(TEXT("PlaceholderButtonIcon"), Icon20x20));
+	Style->Set("JuceConnector.OpenPluginWindow", new IMAGE_BRUSH_SVG(TEXT("PlaceholderButtonIcon"), Icon20x20));
 
 	return Style;
 }
 
-void FAudioPluginConnectorStyle::ReloadTextures()
+void FJuceConnectorStyle::ReloadTextures()
 {
 	if (FSlateApplication::IsInitialized())
 	{
@@ -54,7 +54,7 @@ void FAudioPluginConnectorStyle::ReloadTextures()
 	}
 }
 
-const ISlateStyle& FAudioPluginConnectorStyle::Get()
+const ISlateStyle& FJuceConnectorStyle::Get()
 {
 	return *StyleInstance;
 }

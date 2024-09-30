@@ -6,7 +6,7 @@
 class FToolBarBuilder;
 class FMenuBuilder;
 
-class FAudioPluginConnectorModule : public IModuleInterface
+class FJuceConnectorModule : public IModuleInterface
 {
 public:
 

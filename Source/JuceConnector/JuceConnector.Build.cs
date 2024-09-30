@@ -20,6 +20,7 @@ public class JuceConnector : ModuleRules
 		PublicDependencyModuleNames.AddRange(new[]
 		{
 			"Core",
+			"DeveloperSettings"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new[]

@@ -45,6 +45,7 @@ public class AudioPluginConnector : ModuleRules
 
 		/* Add the headers. */
 		PrivateIncludePaths.Add(juceDirectory);
+		PrivateIncludePaths.Add(Path.Combine(juceDirectory, "juce_audio_processors", "format_types", "VST3_SDK"));
 
 		/* Preprocessor settings -- This is an alternative for the AppConfig.h created from Projucer. */
 		PrivateDefinitions.Add("JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1");
@@ -54,5 +55,13 @@ public class AudioPluginConnector : ModuleRules
 		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_data_structures=1");
 		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_events=1");
 		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_graphics=1");
+		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_gui_basics=1");
+		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_gui_extra=1");
+		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_audio_basics=1");
+		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_audio_processors=1");
+		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_audio_devices=1");
+		PrivateDefinitions.Add("JUCE_MODULE_AVAILABLE_juce_audio_formats=1");
+
+		PrivateDefinitions.Add("JUCE_PLUGINHOST_VST3=1");
 	}
 }

@@ -12,6 +12,7 @@
 		__pragma(warning(disable: 4146)) \
 		__pragma(warning(disable: 4102)) \
 		__pragma(warning(disable: 4191)) \
+		__pragma(warning(disable: 4777)) \
 		__pragma(warning(disable: 5105))
 
 	#define JUCE_INCLUDES_END \

@@ -1,0 +1,1 @@
+﻿#include "Assets/JuceHostedPluginAsset.h"

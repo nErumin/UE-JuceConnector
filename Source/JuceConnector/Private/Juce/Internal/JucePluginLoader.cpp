@@ -27,6 +27,21 @@ TUniquePtr<juce::AudioPluginInstance> FJucePluginLoader::LoadPlugin(const FStrin
 	return nullptr;
 }
 
+TArray<FString> FJucePluginLoader::FindPlugins(const TArray<FString>& PluginDirectories) const
+{
+	const FString JoinedDirectories = FString::Join(PluginDirectories, TEXT(";"));
+	const TArray<juce::PluginDescription> Descriptions = ScanDescriptions(JoinedDirectories);
+
+	TArray<FString> PluginIdentifiers;
+
+	for (const juce::PluginDescription& Description : Descriptions)
+	{
+		PluginIdentifiers.Add(JuceConverters::ToUnrealString(Description.fileOrIdentifier));
+	}
+
+	return PluginIdentifiers;
+}
+
 TOptional<juce::PluginDescription> FJucePluginLoader::FindDescription(const FString& PluginPath) const
 {
 	const FString PluginDirectory{ FPaths::GetPath(PluginPath) };

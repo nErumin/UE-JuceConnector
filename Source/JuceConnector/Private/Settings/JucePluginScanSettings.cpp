@@ -32,9 +32,19 @@ FText UJucePluginScanSettings::GetSectionDescription() const
 	return LOCTEXT("Description", "Settings for default directories to find plugins.");
 }
 
-TConstArrayView<FDirectoryPath> UJucePluginScanSettings::GetVst3Directories() const
+TArray<FString> UJucePluginScanSettings::GetVst3Directories() const
 {
-	return Vst3Directories;
+	TArray<FString> Directories;
+
+	for (const FDirectoryPath& DirectoryPath : Vst3Directories)
+	{
+		if (!DirectoryPath.Path.IsEmpty())
+		{
+			Directories.Add(DirectoryPath.Path);
+		}
+	}
+
+	return Directories;
 }
 
 #undef LOCTEXT_NAMESPACE

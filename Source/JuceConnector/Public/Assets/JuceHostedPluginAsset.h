@@ -2,19 +2,15 @@
 #include "CoreMinimal.h"
 #include "JuceHostedPluginAsset.generated.h"
 
+class FJucePluginProxy;
+
 UCLASS(BlueprintType)
 class JUCECONNECTOR_API UJuceHostedPluginAsset : public UObject
 {
 	GENERATED_BODY()
 public:
-	virtual void Serialize(FArchive& Ar) override;
-
-	UFUNCTION(BlueprintCallable, Category = "Test")
-	void TestSomething();
+	void SetPluginPath(const FString& NewPluginPath);
 private:
-	UPROPERTY(EditAnywhere, Category = "Settings", meta = (AllowPrivateAccess = "true"))
-	FFilePath PluginPath;
-
-	UPROPERTY()
-	TArray<uint8> StateMemory;
+	UPROPERTY(VisibleAnywhere, Category = "Settings", meta = (AllowPrivateAccess = "true"))
+	FString PluginPath;
 };

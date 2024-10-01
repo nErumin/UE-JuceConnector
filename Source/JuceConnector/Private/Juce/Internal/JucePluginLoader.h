@@ -15,6 +15,8 @@ public:
 	static FJucePluginLoader& Get();
 public:
 	TUniquePtr<juce::AudioPluginInstance> LoadPlugin(const FString& PluginPath, const FJucePluginLoadOptions& Options = FJucePluginLoadOptions{});
+
+	TArray<FString> FindPlugins(const TArray<FString>& PluginDirectories) const;
 private:
 	TOptional<juce::PluginDescription> FindDescription(const FString& PluginPath) const;
 	TArray<juce::PluginDescription> ScanDescriptions(const FString& PluginDirectory) const;

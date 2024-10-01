@@ -7,16 +7,19 @@
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
 #include "Assets/TypeActions/JuceHostedPluginAssetActions.h"
+#include "Style/JuceConnectorStyle.h"
 
 #define LOCTEXT_NAMESPACE "FJuceConnectorModule"
 
 void FJuceConnectorModule::StartupModule()
 {
+	FJuceConnectorStyle::Initialize();
 	RegisterAssetTypeActions();
 }
 
 void FJuceConnectorModule::ShutdownModule()
 {
+	FJuceConnectorStyle::Shutdown();
 	UnregisterAssetTypeActions();
 }
 

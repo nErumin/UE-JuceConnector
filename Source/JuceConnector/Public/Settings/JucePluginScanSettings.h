@@ -15,7 +15,7 @@ public:
 	virtual FText GetSectionText() const override;
 	virtual FText GetSectionDescription() const override;
 public:
-	TConstArrayView<FDirectoryPath> GetVst3Directories() const;
+	TArray<FString> GetVst3Directories() const;
 private:
 	UPROPERTY(Config, EditAnywhere, Category = "Plugins", DisplayName = "Vst3 Directories", meta = (AllowPrivateAccess = "true"))
 	TArray<FDirectoryPath> Vst3Directories;

@@ -2,6 +2,24 @@
 
 #define LOCTEXT_NAMESPACE "UJucePluginScanSettings"
 
+FName FJucePluginDirectory::GetDirectoryPathPropertyName()
+{
+	return GET_MEMBER_NAME_CHECKED(FJucePluginDirectory, DirectoryPath);
+}
+
+FString FJucePluginDirectory::GetDirectoryPath() const
+{
+	const FString GameContentDirectoryPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir());
+
+	// Convert to absolute path.
+	if (FPaths::IsRelative(DirectoryPath))
+	{
+		return FPaths::ConvertRelativePathToFull(GameContentDirectoryPath, DirectoryPath);
+	}
+
+	return DirectoryPath;
+}
+
 UJucePluginScanSettings* UJucePluginScanSettings::GetDefaultSettings()
 {
 	return GetMutableDefault<UJucePluginScanSettings>();
@@ -36,11 +54,11 @@ TArray<FString> UJucePluginScanSettings::GetVst3Directories() const
 {
 	TArray<FString> Directories;
 
-	for (const FDirectoryPath& DirectoryPath : Vst3Directories)
+	for (const FJucePluginDirectory& Directory : Vst3Directories)
 	{
-		if (!DirectoryPath.Path.IsEmpty())
+		if (const FString DirectoryPath = Directory.GetDirectoryPath(); !DirectoryPath.IsEmpty())
 		{
-			Directories.Add(DirectoryPath.Path);
+			Directories.Add(DirectoryPath);
 		}
 	}
 

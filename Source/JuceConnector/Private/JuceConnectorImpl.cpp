@@ -7,6 +7,8 @@
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
 #include "Assets/TypeActions/JuceHostedPluginAssetActions.h"
+#include "Settings/JucePluginScanSettings.h"
+#include "Settings/Customizations/JucePluginDirectoryCustomization.h"
 #include "Style/JuceConnectorStyle.h"
 
 #define LOCTEXT_NAMESPACE "FJuceConnectorModule"
@@ -14,13 +16,17 @@
 void FJuceConnectorModule::StartupModule()
 {
 	FJuceConnectorStyle::Initialize();
+
 	RegisterAssetTypeActions();
+	RegisterPropertyTypeCustomizations();
 }
 
 void FJuceConnectorModule::ShutdownModule()
 {
 	FJuceConnectorStyle::Shutdown();
+
 	UnregisterAssetTypeActions();
+	UnregisterPropertyTypeCustomizations();
 }
 
 void FJuceConnectorModule::RegisterAssetTypeActions()
@@ -57,6 +63,25 @@ void FJuceConnectorModule::UnregisterAssetTypeActions()
 	}
 
 	RegisteredAssetTypeActions.Empty();
+}
+
+void FJuceConnectorModule::RegisterPropertyTypeCustomizations()
+{
+	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	PropertyModule.RegisterCustomPropertyTypeLayout
+	(
+		FJucePluginDirectory::StaticStruct()->GetFName(),
+		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FJucePluginDirectoryCustomization::MakeInstance)
+	);
+}
+
+void FJuceConnectorModule::UnregisterPropertyTypeCustomizations()
+{
+	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
+	{
+		PropertyModule->UnregisterCustomPropertyTypeLayout(FJucePluginDirectory::StaticStruct()->GetFName());
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

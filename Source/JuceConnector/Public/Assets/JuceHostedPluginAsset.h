@@ -12,6 +12,8 @@ class JUCECONNECTOR_API UJuceHostedPluginAsset : public UObject
 public:
 	static FName GetPluginPathPropertyName();
 public:
+	virtual void Serialize(FArchive& Ar) override;
+public:
 	TWeakPtr<FJucePluginProxy> GetPluginProxy() const;
 
 	FString GetPluginPath() const;
@@ -20,5 +22,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FString PluginPath;
 
+	TArray<uint8> SerializedStateBlock;
 	mutable TSharedPtr<FJucePluginProxy> PluginProxy;
 };

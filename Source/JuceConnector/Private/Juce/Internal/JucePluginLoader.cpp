@@ -48,7 +48,10 @@ TOptional<juce::PluginDescription> FJucePluginLoader::FindDescription(const FStr
 
 	for (const juce::PluginDescription& Description : ScanDescriptions(PluginDirectory))
 	{
-		if (Description.fileOrIdentifier.equalsIgnoreCase(JuceConverters::FromUnrealString(PluginPath)))
+		const juce::String DescriptionFilePath = Description.fileOrIdentifier.replace("\\", "/");
+		const juce::String SourceFilePath = JuceConverters::FromUnrealString(PluginPath).replace("\\", "/");
+
+		if (DescriptionFilePath.equalsIgnoreCase(SourceFilePath))
 		{
 			return Description;
 		}

@@ -1,5 +1,20 @@
 ﻿#include "Assets/JuceHostedPluginAsset.h"
 
+FName UJuceHostedPluginAsset::GetPluginPathPropertyName()
+{
+	return GET_MEMBER_NAME_CHECKED(UJuceHostedPluginAsset, PluginPath);
+}
+
+TWeakPtr<FJucePluginProxy> UJuceHostedPluginAsset::GetPluginProxy() const
+{
+	if (!PluginProxy && !PluginPath.IsEmpty())
+	{
+		PluginProxy = MakeShared<FJucePluginProxy>(GetPluginPath());
+	}
+
+	return PluginProxy;
+}
+
 FString UJuceHostedPluginAsset::GetPluginPath() const
 {
 	// Convert to absolute path.

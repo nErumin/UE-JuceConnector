@@ -14,8 +14,8 @@ private:
 	void RegisterAssetTypeActions();
 	void UnregisterAssetTypeActions();
 
-	void RegisterPropertyTypeCustomizations();
-	void UnregisterPropertyTypeCustomizations();
+	void RegisterTypeCustomizations();
+	void UnregisterTypeCustomizations();
 private:
 	TArray<TSharedRef<IAssetTypeActions>> RegisteredAssetTypeActions;
 };

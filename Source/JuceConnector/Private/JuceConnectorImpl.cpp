@@ -6,6 +6,8 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
+#include "Assets/JuceHostedPluginAsset.h"
+#include "Assets/Customizations/JucePluginAssetCustomization.h"
 #include "Assets/TypeActions/JuceHostedPluginAssetActions.h"
 #include "Settings/JucePluginScanSettings.h"
 #include "Settings/Customizations/JucePluginDirectoryCustomization.h"
@@ -18,7 +20,7 @@ void FJuceConnectorModule::StartupModule()
 	FJuceConnectorStyle::Initialize();
 
 	RegisterAssetTypeActions();
-	RegisterPropertyTypeCustomizations();
+	RegisterTypeCustomizations();
 }
 
 void FJuceConnectorModule::ShutdownModule()
@@ -26,7 +28,7 @@ void FJuceConnectorModule::ShutdownModule()
 	FJuceConnectorStyle::Shutdown();
 
 	UnregisterAssetTypeActions();
-	UnregisterPropertyTypeCustomizations();
+	UnregisterTypeCustomizations();
 }
 
 void FJuceConnectorModule::RegisterAssetTypeActions()
@@ -65,7 +67,7 @@ void FJuceConnectorModule::UnregisterAssetTypeActions()
 	RegisteredAssetTypeActions.Empty();
 }
 
-void FJuceConnectorModule::RegisterPropertyTypeCustomizations()
+void FJuceConnectorModule::RegisterTypeCustomizations()
 {
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
@@ -74,13 +76,20 @@ void FJuceConnectorModule::RegisterPropertyTypeCustomizations()
 		FJucePluginDirectory::StaticStruct()->GetFName(),
 		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FJucePluginDirectoryCustomization::MakeInstance)
 	);
+
+	PropertyModule.RegisterCustomClassLayout
+	(
+		UJuceHostedPluginAsset::StaticClass()->GetFName(),
+		FOnGetDetailCustomizationInstance::CreateStatic(&FJucePluginAssetCustomization::MakeInstance)
+	);
 }
 
-void FJuceConnectorModule::UnregisterPropertyTypeCustomizations()
+void FJuceConnectorModule::UnregisterTypeCustomizations()
 {
 	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
 	{
 		PropertyModule->UnregisterCustomPropertyTypeLayout(FJucePluginDirectory::StaticStruct()->GetFName());
+		PropertyModule->UnregisterCustomClassLayout(UJuceHostedPluginAsset::StaticClass()->GetFName());
 	}
 }
 

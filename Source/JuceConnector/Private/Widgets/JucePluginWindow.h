@@ -9,6 +9,7 @@ class FJucePluginProxy;
 class SJucePluginWindow : public SWindow
 {
 	SLATE_BEGIN_ARGS(SJucePluginWindow) {}
+		SLATE_ARGUMENT(FText, Title)
 		SLATE_ARGUMENT(TWeakPtr<FJucePluginProxy>, PluginProxy)
 	SLATE_END_ARGS()
 public:

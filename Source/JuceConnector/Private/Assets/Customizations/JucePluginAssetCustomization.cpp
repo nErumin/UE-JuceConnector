@@ -250,6 +250,7 @@ FReply FJucePluginAssetCustomization::OnOpenButtonClicked(TArray<TWeakObjectPtr<
 		TSharedPtr<SJucePluginWindow> JucePluginWindow{ nullptr };
 
 		SAssignNew(JucePluginWindow, SJucePluginWindow)
+			.Title(FText::FromString(PluginAsset->GetName()))
 			.PluginProxy(PluginAsset->GetPluginProxy());
 
 		if (JucePluginWindow->IsAlreadyPluginWindowCreated())

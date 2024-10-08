@@ -15,7 +15,7 @@ void SJucePluginWindow::Construct(const FArguments& InArgs)
 	SWindow::Construct
 	(
 		SWindow::FArguments{}
-		.Title(LOCTEXT("Title", "Plugin Window"))
+		.Title(InArgs._Title)
 		.ClientSize(FVector2D{ 650, 650 })
 		.SupportsMinimize(false)
 		.SupportsMaximize(false)

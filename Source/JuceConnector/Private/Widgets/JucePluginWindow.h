@@ -21,7 +21,6 @@ public:
 	void AddWindowAndAttachPlugin();
 	void AttachPluginEditorManually();
 private:
-	void OnPluginWindowActivated();
 	void OnPluginWindowClosed(const TSharedRef<SWindow>& ThisWindow);
 private:
 	TSharedPtr<IJuceProcessorEditorHandle> EditorHandle;

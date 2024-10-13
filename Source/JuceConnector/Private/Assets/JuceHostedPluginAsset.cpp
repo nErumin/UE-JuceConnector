@@ -26,16 +26,25 @@ void UJuceHostedPluginAsset::Serialize(FArchive& Ar)
 	}
 }
 
+void UJuceHostedPluginAsset::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	if (PluginProxy)
+	{
+		PluginProxy->OnPluginParameterChanged().RemoveAll(this);
+	}
+}
+
 TWeakPtr<FJucePluginProxy> UJuceHostedPluginAsset::GetPluginProxy() const
 {
 	if (!PluginProxy && !PluginPath.IsEmpty())
 	{
 		PluginProxy = MakeShared<FJucePluginProxy>(GetPluginPath());
+		RecoverPluginStateFromBlock();
 
-		if (!SerializedStateBlock.IsEmpty())
-		{
-			PluginProxy->SetState(SerializedStateBlock);
-		}
+		// Register the callback later, since it causes unexpected event handling like marking dirty...
+		PluginProxy->OnPluginParameterChanged().AddUObject(this, &UJuceHostedPluginAsset::OnPluginParameterChanged);
 	}
 
 	return PluginProxy;
@@ -66,4 +75,19 @@ void UJuceHostedPluginAsset::SetPluginPath(const FString& NewPluginPath)
 	}
 
 	PluginPath = ConvertedPath;
+}
+
+void UJuceHostedPluginAsset::RecoverPluginStateFromBlock() const
+{
+	if (!SerializedStateBlock.IsEmpty() && PluginProxy)
+	{
+		PluginProxy->SetState(SerializedStateBlock);
+	}
+}
+
+void UJuceHostedPluginAsset::OnPluginParameterChanged([[maybe_unused]] const FString& ParameterName, [[maybe_unused]] float NewValue) const
+{
+#if WITH_EDITOR
+	MarkPackageDirty();
+#endif
 }

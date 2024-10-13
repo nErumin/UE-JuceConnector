@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(FJucePluginParameterChanged, const FString&, float);
+
 class IJuceProcessorEditorHandle;
 
 class FJucePluginProxy : public TSharedFromThis<FJucePluginProxy>
@@ -20,8 +22,9 @@ public:
 	FText GetParameterValueAsText(const FString& ParameterName) const;
 	float GetNormalizedParameterValue(const FString& ParameterName, float DefaultValue = 0.0f) const;
 	FText GetNormalizedParameterValueAsText(const FString& ParameterName) const;
-
 	void SetParameterValue(const FString& ParameterName, float NewValue);
+
+	FJucePluginParameterChanged& OnPluginParameterChanged();
 
 	TSharedRef<IJuceProcessorEditorHandle> GetEditorHandle() const;
 

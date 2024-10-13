@@ -13,11 +13,16 @@ public:
 	static FName GetPluginPathPropertyName();
 public:
 	virtual void Serialize(FArchive& Ar) override;
+	virtual void BeginDestroy() override;
 public:
 	TWeakPtr<FJucePluginProxy> GetPluginProxy() const;
 
 	FString GetPluginPath() const;
 	void SetPluginPath(const FString& NewPluginPath);
+private:
+	void RecoverPluginStateFromBlock() const;
+
+	void OnPluginParameterChanged(const FString& ParameterName, float NewValue) const;
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Settings", meta = (AllowPrivateAccess = "true"))
 	FString PluginPath;

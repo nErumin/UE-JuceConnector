@@ -7,7 +7,33 @@
 
 namespace JucePluginProxyInternals
 {
-	class FManagedPluginInstance final : public juce::AudioProcessorListener
+	FString ExtractParameterName(const juce::AudioProcessorParameter* Parameter)
+	{
+		return JuceConverters::ToUnrealString(Parameter->getName(1024));
+	}
+
+	class FDelegateConnectingProcessorListener final : public juce::AudioProcessorListener
+	{
+	public:
+		virtual void audioProcessorParameterChanged(juce::AudioProcessor* Processor, int ParameterIndex, float NewValue) override
+		{
+			const juce::AudioProcessorParameter* Parameter = Processor->getParameters()[ParameterIndex];
+
+			if (ParameterChanged.IsBound())
+			{
+				ParameterChanged.Broadcast(ExtractParameterName(Parameter), NewValue);
+			}
+		}
+
+		virtual void audioProcessorChanged(juce::AudioProcessor* Processor, const ChangeDetails& Details) override
+		{
+			/* Nothing to do */
+		}
+	public:
+		FJucePluginParameterChanged ParameterChanged;
+	};
+
+	class FManagedPluginInstance final : public TSharedFromThis<FManagedPluginInstance>
 	{
 	public:
 		static TSharedPtr<FManagedPluginInstance> Create(const FString& PluginPath, const TWeakPtr<FManagedPluginInstance>& WeakParent = nullptr)
@@ -31,24 +57,25 @@ namespace JucePluginProxyInternals
 			// Cache parameters.
 			for (juce::AudioProcessorParameter* Parameter : PluginInstance->getParameters())
 			{
-				NameToParameterMap.Add(JuceConverters::ToUnrealString(Parameter->getName(1024)), Parameter);
+				NameToParameterMap.Add(ExtractParameterName(Parameter), Parameter);
 			}
+
+			PluginInstance->addListener(&ProcessorListener);
 		}
 
-		virtual ~FManagedPluginInstance() override
+		~FManagedPluginInstance()
 		{
 			DetachFromParent();
-		}
-	public:
-		virtual void audioProcessorParameterChanged(juce::AudioProcessor* processor, int parameterIndex, float newValue) override
-		{
-			UE_LOG(LogTemp, Error, TEXT("Test: Index - %d, Value - %f"), parameterIndex, newValue);
-			PluginInstance->getParameters()[parameterIndex]->setValue(newValue);
-		}
 
-		virtual void audioProcessorChanged(juce::AudioProcessor* processor, const ChangeDetails& details) override
+			PluginInstance->removeListener(&ProcessorListener);
+		}
+	private:
+		void OnParentParameterChanged(const FString& ParameterName, float NewValue)
 		{
-			/* Nothing to do */
+			if (NameToParameterMap.Contains(ParameterName))
+			{
+				NameToParameterMap[ParameterName]->setValue(NewValue);
+			}
 		}
 	public:
 		TSharedRef<juce::AudioPluginInstance> GetInternalPlugin() const
@@ -61,13 +88,18 @@ namespace JucePluginProxyInternals
 			return NameToParameterMap;
 		}
 
+		FDelegateConnectingProcessorListener& GetProcessorListener()
+		{
+			return ProcessorListener;
+		}
+
 		void AttachToParent(const TWeakPtr<FManagedPluginInstance>& InWeakParent)
 		{
 			if (const TSharedPtr<FManagedPluginInstance> AliveParent = InWeakParent.Pin())
 			{
 				DetachFromParent();
 
-				AliveParent->PluginInstance->addListener(this);
+				AliveParent->GetProcessorListener().ParameterChanged.AddSP(this, &FManagedPluginInstance::OnParentParameterChanged);
 				WeakParent = AliveParent;
 			}
 		}
@@ -76,16 +108,17 @@ namespace JucePluginProxyInternals
 		{
 			if (const TSharedPtr<FManagedPluginInstance> AliveParent = WeakParent.Pin())
 			{
-				AliveParent->PluginInstance->removeListener(this);
+				AliveParent->GetProcessorListener().ParameterChanged.RemoveAll(this);
 			}
 
 			WeakParent.Reset();
 		}
 	private:
+		TWeakPtr<FManagedPluginInstance> WeakParent;
+
 		TSharedPtr<juce::AudioPluginInstance> PluginInstance{ nullptr };
 		TMap<FString, juce::AudioProcessorParameter*> NameToParameterMap;
-
-		TWeakPtr<FManagedPluginInstance> WeakParent;
+		FDelegateConnectingProcessorListener ProcessorListener;
 	};
 
 	class FJuceProcessorEditorHandle final : public IJuceProcessorEditorHandle
@@ -96,7 +129,7 @@ namespace JucePluginProxyInternals
 		{
 		}
 
-		virtual ~FJuceProcessorEditorHandle()
+		virtual ~FJuceProcessorEditorHandle() override
 		{
 			DetachFromWindow();
 		}
@@ -191,6 +224,10 @@ public:
 
 	~FImpl()
 	{
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
+		{
+			Root->GetProcessorListener().ParameterChanged.RemoveAll(this);
+		}
 	}
 
 	FImpl(const FImpl& Other) = delete;
@@ -244,7 +281,7 @@ public:
 		{
 			if (const auto& NameParameterMap = Root->GetNameParameterMap(); NameParameterMap.Contains(ParameterName))
 			{
-				NameParameterMap[ParameterName]->setValue(NewValue);
+				NameParameterMap[ParameterName]->setValueNotifyingHost(NewValue);
 			}
 		}
 	}
@@ -280,6 +317,11 @@ public:
 		}
 	}
 
+	FJucePluginParameterChanged& OnPluginParameterChanged()
+	{
+		return RootParameterChanged;
+	}
+
 	TSharedRef<IJuceProcessorEditorHandle> GetProcessorEditorHandle() const
 	{
 		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
@@ -295,15 +337,33 @@ private:
 		if (!RootInstance)
 		{
 			RootInstance = JucePluginProxyInternals::FManagedPluginInstance::Create(PluginPath);
+
+			RootInstance->GetProcessorListener().ParameterChanged.AddRaw(this, &FImpl::OnRootParameterChanged);
 		}
 
 		return RootInstance;
 	}
+
+	void OnRootParameterChanged(const FString& ParameterName, float NewValue) const
+	{
+		if (IsInGameThread())
+		{
+			RootParameterChanged.Broadcast(ParameterName, NewValue);
+		}
+		else
+		{
+			::AsyncTask(ENamedThreads::GameThread, [this, ParameterName, NewValue]
+			{
+				RootParameterChanged.Broadcast(ParameterName, NewValue);
+			});
+		}
+	}
 private:
 	FString PluginPath;
 
-	mutable TSharedPtr<juce::AudioProcessorEditor> RootInstanceEditor;
 	mutable TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> RootInstance{ nullptr };
+	mutable FDelegateHandle RootParameterChangedHandle;
+	FJucePluginParameterChanged RootParameterChanged;
 };
 
 FJucePluginProxy::FJucePluginProxy(const FString& PluginPath)
@@ -358,6 +418,11 @@ FText FJucePluginProxy::GetNormalizedParameterValueAsText(const FString& Paramet
 void FJucePluginProxy::SetParameterValue(const FString& ParameterName, float NewValue)
 {
 	Impl->SetParameterValue(ParameterName, NewValue);
+}
+
+FJucePluginParameterChanged& FJucePluginProxy::OnPluginParameterChanged()
+{
+	return Impl->OnPluginParameterChanged();
 }
 
 TSharedRef<IJuceProcessorEditorHandle> FJucePluginProxy::GetEditorHandle() const

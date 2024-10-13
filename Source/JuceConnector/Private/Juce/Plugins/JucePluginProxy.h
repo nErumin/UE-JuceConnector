@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
 
+class IJuceAudioProcessingHandle;
 DECLARE_MULTICAST_DELEGATE_TwoParams(FJucePluginParameterChanged, const FString&, float);
 
 class IJuceProcessorEditorHandle;
@@ -27,6 +28,7 @@ public:
 	FJucePluginParameterChanged& OnPluginParameterChanged();
 
 	TSharedRef<IJuceProcessorEditorHandle> GetEditorHandle() const;
+	TSharedRef<IJuceAudioProcessingHandle> CreateNewProcessingHandle() const;
 
 	TArray<uint8> GetState() const;
 	void SetState(const TArray<uint8>& StateMemoryBlock);

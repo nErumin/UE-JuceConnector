@@ -1,4 +1,6 @@
 ﻿#include "Juce/Plugins/JucePluginProxy.h"
+
+#include "Juce/Plugins/JuceAudioProcessingHandle.h"
 #include "Juce/Plugins/JuceProcessorEditorHandle.h"
 
 #include "Juce/Internal/JucePluginLoader.h"
@@ -52,8 +54,6 @@ namespace JucePluginProxyInternals
 		explicit FManagedPluginInstance(TUniquePtr<juce::AudioPluginInstance> InPluginInstance)
 			: PluginInstance{ MakeShareable(InPluginInstance.Release()) }
 		{
-			ensureMsgf(PluginInstance, TEXT("The provided instance should be valid when created!"));
-
 			// Cache parameters.
 			for (juce::AudioProcessorParameter* Parameter : PluginInstance->getParameters())
 			{
@@ -80,12 +80,25 @@ namespace JucePluginProxyInternals
 	public:
 		TSharedRef<juce::AudioPluginInstance> GetInternalPlugin() const
 		{
-			return PluginInstance.ToSharedRef();
+			return PluginInstance;
 		}
 
 		const TMap<FString, juce::AudioProcessorParameter*>& GetNameParameterMap() const
 		{
 			return NameToParameterMap;
+		}
+
+		juce::MemoryBlock GetStateMemoryBlock() const
+		{
+			juce::MemoryBlock Block;
+			GetInternalPlugin()->getStateInformation(Block);
+
+			return Block;
+		}
+
+		void SetStateMemoryBlock(const void* Data, int Size)
+		{
+			GetInternalPlugin()->setStateInformation(Data, Size);
 		}
 
 		FDelegateConnectingProcessorListener& GetProcessorListener()
@@ -99,7 +112,9 @@ namespace JucePluginProxyInternals
 			{
 				DetachFromParent();
 
+				CopyStateFromParent(InWeakParent);
 				AliveParent->GetProcessorListener().ParameterChanged.AddSP(this, &FManagedPluginInstance::OnParentParameterChanged);
+
 				WeakParent = AliveParent;
 			}
 		}
@@ -114,9 +129,19 @@ namespace JucePluginProxyInternals
 			WeakParent.Reset();
 		}
 	private:
+		void CopyStateFromParent(const TWeakPtr<FManagedPluginInstance>& InWeakParent)
+		{
+			if (const TSharedPtr<FManagedPluginInstance> AliveParent = InWeakParent.Pin())
+			{
+				juce::MemoryBlock ParentStateBlock = AliveParent->GetStateMemoryBlock();
+
+				SetStateMemoryBlock(ParentStateBlock.getData(), ParentStateBlock.getSize());
+			}
+		}
+	private:
 		TWeakPtr<FManagedPluginInstance> WeakParent;
 
-		TSharedPtr<juce::AudioPluginInstance> PluginInstance{ nullptr };
+		TSharedRef<juce::AudioPluginInstance> PluginInstance;
 		TMap<FString, juce::AudioProcessorParameter*> NameToParameterMap;
 		FDelegateConnectingProcessorListener ProcessorListener;
 	};
@@ -212,6 +237,57 @@ namespace JucePluginProxyInternals
 		TUniquePtr<juce::AudioProcessorEditor> CreatedEditor{ nullptr };
 		TWeakPtr<juce::AudioPluginInstance> WeakPlugin;
 	};
+
+	class FJuceAudioProcessingHandle final : public IJuceAudioProcessingHandle
+	{
+	public:
+		explicit FJuceAudioProcessingHandle(const TSharedPtr<FManagedPluginInstance>& InManagedInstance)
+			: ManagedInstance{ InManagedInstance }
+		{
+		}
+	public:
+		virtual void Prepare(float SampleRate, int NumChannels, int MaxExpectedSamplesPerBlock) override
+		{
+			if (ManagedInstance)
+			{
+				ManagedInstance->GetInternalPlugin()->prepareToPlay(SampleRate, MaxExpectedSamplesPerBlock);
+				PreparedNumChannels = NumChannels;
+			}
+		}
+
+		virtual bool IsPrepared() const override
+		{
+			return PreparedNumChannels.IsSet();
+		}
+
+		virtual void ProcessBlock(const Audio::FAlignedFloatBuffer* InputBuffer, Audio::FAlignedFloatBuffer* OutputBuffer) override
+		{
+			if (ManagedInstance && IsPrepared())
+			{
+				const int NumSamples = InputBuffer->Num() / *PreparedNumChannels;
+
+				juce::AudioBuffer<float> SampleBuffer{ *PreparedNumChannels, NumSamples };
+				juce::MidiBuffer MidiBuffer;
+
+				JuceConverters::FillJuceBuffer(SampleBuffer, InputBuffer, *PreparedNumChannels);
+				ManagedInstance->GetInternalPlugin()->processBlock(SampleBuffer, MidiBuffer);
+
+				JuceConverters::FillUnrealAudioBuffer(OutputBuffer, SampleBuffer);
+			}
+		}
+
+		virtual void Reset() override
+		{
+			if (ManagedInstance)
+			{
+				ManagedInstance->GetInternalPlugin()->reset();
+				PreparedNumChannels = NullOpt;
+			}
+		}
+	private:
+		TSharedPtr<FManagedPluginInstance> ManagedInstance;
+		TOptional<int> PreparedNumChannels{ NullOpt };
+	};
 }
 
 struct FJucePluginProxy::FImpl
@@ -286,22 +362,11 @@ public:
 		}
 	}
 
-	TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> CreateChildInstance() const
-	{
-		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
-		{
-			return JucePluginProxyInternals::FManagedPluginInstance::Create(PluginPath, Root);
-		}
-
-		return nullptr;
-	}
-
 	TArray<uint8> GetPluginState() const
 	{
 		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
 		{
-			juce::MemoryBlock JuceBlock;
-			Root->GetInternalPlugin()->getStateInformation(JuceBlock);
+			juce::MemoryBlock JuceBlock = Root->GetStateMemoryBlock();
 
 			return TArray{ static_cast<uint8*>(JuceBlock.getData()), static_cast<int32>(JuceBlock.getSize()) };
 		}
@@ -313,7 +378,7 @@ public:
 	{
 		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
 		{
-			Root->GetInternalPlugin()->setStateInformation(StateMemoryBlock.GetData(), StateMemoryBlock.Num());
+			Root->SetStateMemoryBlock(StateMemoryBlock.GetData(), StateMemoryBlock.Num());
 		}
 	}
 
@@ -330,6 +395,18 @@ public:
 		}
 
 		return MakeShared<JucePluginProxyInternals::FJuceProcessorEditorHandle>(nullptr);
+	}
+
+	TSharedRef<JucePluginProxyInternals::FJuceAudioProcessingHandle> CreateNewProcessingHandle() const
+	{
+		using namespace JucePluginProxyInternals;
+
+		if (const TSharedPtr<FManagedPluginInstance> Root = GetRootInstance())
+		{
+			return MakeShared<FJuceAudioProcessingHandle>(FManagedPluginInstance::Create(PluginPath, Root));
+		}
+
+		return MakeShared<FJuceAudioProcessingHandle>(nullptr);
 	}
 private:
 	TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> GetRootInstance() const
@@ -362,7 +439,6 @@ private:
 	FString PluginPath;
 
 	mutable TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> RootInstance{ nullptr };
-	mutable FDelegateHandle RootParameterChangedHandle;
 	FJucePluginParameterChanged RootParameterChanged;
 };
 
@@ -428,6 +504,11 @@ FJucePluginParameterChanged& FJucePluginProxy::OnPluginParameterChanged()
 TSharedRef<IJuceProcessorEditorHandle> FJucePluginProxy::GetEditorHandle() const
 {
 	return Impl->GetProcessorEditorHandle();
+}
+
+TSharedRef<IJuceAudioProcessingHandle> FJucePluginProxy::CreateNewProcessingHandle() const
+{
+	return Impl->CreateNewProcessingHandle();
 }
 
 TArray<uint8> FJucePluginProxy::GetState() const

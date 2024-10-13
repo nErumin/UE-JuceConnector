@@ -253,7 +253,7 @@ FReply FJucePluginAssetCustomization::OnOpenButtonClicked(TArray<TWeakObjectPtr<
 			.Title(FText::FromString(PluginAsset->GetName()))
 			.PluginProxy(PluginAsset->GetPluginProxy());
 
-		if (JucePluginWindow->IsAlreadyPluginWindowCreated())
+		if (JucePluginWindow->IsAlreadyPluginEditorCreated())
 		{
 			FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, LOCTEXT("AlreadyOpenedPlugin", "Cannot open more than two windows for one plugin instance."));
 		}

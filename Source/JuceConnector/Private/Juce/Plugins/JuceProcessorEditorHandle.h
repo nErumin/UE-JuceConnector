@@ -14,13 +14,9 @@ protected:
 	IJuceProcessorEditorHandle& operator=(const IJuceProcessorEditorHandle& Other) = default;
 	IJuceProcessorEditorHandle& operator=(IJuceProcessorEditorHandle&& Other) noexcept = default;
 public:
-	virtual void Initialize() = 0;
-	virtual void Finalize() = 0;
-	virtual bool IsValid() = 0;
-
-	virtual void AttachToWindow(const TSharedPtr<FGenericWindow>& Window) = 0;
-	virtual void DetachFromWindow() = 0;
-	virtual bool IsAttached() const = 0;
+	virtual bool AttachToWindow(const TSharedPtr<FGenericWindow>& Window) = 0;
+	virtual bool DetachFromWindow() = 0;
+	virtual bool IsAttachable() const = 0;
 
 	virtual FIntVector2 GetSize() const = 0;
 

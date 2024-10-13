@@ -9,7 +9,7 @@ void SJucePluginWindow::Construct(const FArguments& InArgs)
 {
 	if (const TSharedPtr<FJucePluginProxy> AliveProxy = InArgs._PluginProxy.Pin())
 	{
-		EditorHandle = AliveProxy->CreateEditorHandle();
+		EditorHandle = AliveProxy->GetEditorHandle();
 	}
 
 	SWindow::Construct
@@ -22,18 +22,17 @@ void SJucePluginWindow::Construct(const FArguments& InArgs)
 		.SizingRule(ESizingRule::FixedSize)
 	);
 
-	WindowActivatedEvent.AddSP(this, &SJucePluginWindow::OnPluginWindowActivated);
 	WindowClosedEvent.AddSP(this, &SJucePluginWindow::OnPluginWindowClosed);
 }
 
-bool SJucePluginWindow::IsAlreadyPluginWindowCreated() const
+bool SJucePluginWindow::IsAlreadyPluginEditorCreated() const
 {
-	return EditorHandle->IsValid();
+	return !EditorHandle->IsAttachable();
 }
 
-void SJucePluginWindow::AttachPluginWindowManually()
+void SJucePluginWindow::AttachPluginEditorManually()
 {
-	if (IsAlreadyPluginWindowCreated() && !EditorHandle->IsAttached())
+	if (!IsAlreadyPluginEditorCreated())
 	{
 		EditorHandle->AttachToWindow(GetNativeWindow());
 		EditorHandle->SetPosition(GetDefaultEditorPosition());
@@ -60,23 +59,14 @@ void SJucePluginWindow::AddWindowAndAttachPlugin()
 	FSlateApplication::Get().AddWindow(StaticCastSharedRef<SWindow>(AsShared()));
 
 	// To display the editor correctly, the attachment happens after adding the window.
-	AttachPluginWindowManually();
-}
-
-void SJucePluginWindow::OnPluginWindowActivated()
-{
-	if (!IsAlreadyPluginWindowCreated())
-	{
-		EditorHandle->Initialize();
-	}
+	AttachPluginEditorManually();
 }
 
 void SJucePluginWindow::OnPluginWindowClosed([[maybe_unused]] const TSharedRef<SWindow>& ThisWindow)
 {
-	ensure(IsAlreadyPluginWindowCreated());
+	ensure(IsAlreadyPluginEditorCreated());
 
 	EditorHandle->DetachFromWindow();
-	EditorHandle->Finalize();
 }
 
 #undef LOCTEXT_NAMESPACE

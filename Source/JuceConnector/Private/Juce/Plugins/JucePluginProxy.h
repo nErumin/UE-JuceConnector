@@ -23,7 +23,7 @@ public:
 
 	void SetParameterValue(const FString& ParameterName, float NewValue);
 
-	TSharedRef<IJuceProcessorEditorHandle> CreateEditorHandle();
+	TSharedRef<IJuceProcessorEditorHandle> GetEditorHandle() const;
 
 	TArray<uint8> GetState() const;
 	void SetState(const TArray<uint8>& StateMemoryBlock);

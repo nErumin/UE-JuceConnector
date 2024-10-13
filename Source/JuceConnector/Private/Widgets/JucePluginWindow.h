@@ -16,10 +16,10 @@ public:
 	void Construct(const FArguments& InArgs);
 
 	FIntVector2 GetDefaultEditorPosition() const;
-	bool IsAlreadyPluginWindowCreated() const;
+	bool IsAlreadyPluginEditorCreated() const;
 
 	void AddWindowAndAttachPlugin();
-	void AttachPluginWindowManually();
+	void AttachPluginEditorManually();
 private:
 	void OnPluginWindowActivated();
 	void OnPluginWindowClosed(const TSharedRef<SWindow>& ThisWindow);

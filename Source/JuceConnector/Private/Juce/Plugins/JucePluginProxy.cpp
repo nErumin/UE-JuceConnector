@@ -5,6 +5,182 @@
 #include "Juce/JuceHeader.h"
 #include "Juce/Utils/JuceConverters.h"
 
+namespace JucePluginProxyInternals
+{
+	class FManagedPluginInstance final : public juce::AudioProcessorListener
+	{
+	public:
+		static TSharedPtr<FManagedPluginInstance> Create(const FString& PluginPath, const TWeakPtr<FManagedPluginInstance>& WeakParent = nullptr)
+		{
+			if (TUniquePtr<juce::AudioPluginInstance> Instance = FJucePluginLoader::Get().LoadPlugin(PluginPath))
+			{
+				const TSharedPtr<FManagedPluginInstance> ManagedInstance = MakeShared<FManagedPluginInstance>(MoveTemp(Instance));
+				ManagedInstance->AttachToParent(WeakParent);
+
+				return ManagedInstance;
+			}
+
+			return nullptr;
+		}
+	public:
+		explicit FManagedPluginInstance(TUniquePtr<juce::AudioPluginInstance> InPluginInstance)
+			: PluginInstance{ MakeShareable(InPluginInstance.Release()) }
+		{
+			ensureMsgf(PluginInstance, TEXT("The provided instance should be valid when created!"));
+
+			// Cache parameters.
+			for (juce::AudioProcessorParameter* Parameter : PluginInstance->getParameters())
+			{
+				NameToParameterMap.Add(JuceConverters::ToUnrealString(Parameter->getName(1024)), Parameter);
+			}
+		}
+
+		virtual ~FManagedPluginInstance() override
+		{
+			DetachFromParent();
+		}
+	public:
+		virtual void audioProcessorParameterChanged(juce::AudioProcessor* processor, int parameterIndex, float newValue) override
+		{
+			UE_LOG(LogTemp, Error, TEXT("Test: Index - %d, Value - %f"), parameterIndex, newValue);
+			PluginInstance->getParameters()[parameterIndex]->setValue(newValue);
+		}
+
+		virtual void audioProcessorChanged(juce::AudioProcessor* processor, const ChangeDetails& details) override
+		{
+			/* Nothing to do */
+		}
+	public:
+		TSharedRef<juce::AudioPluginInstance> GetInternalPlugin() const
+		{
+			return PluginInstance.ToSharedRef();
+		}
+
+		const TMap<FString, juce::AudioProcessorParameter*>& GetNameParameterMap() const
+		{
+			return NameToParameterMap;
+		}
+
+		void AttachToParent(const TWeakPtr<FManagedPluginInstance>& InWeakParent)
+		{
+			if (const TSharedPtr<FManagedPluginInstance> AliveParent = InWeakParent.Pin())
+			{
+				DetachFromParent();
+
+				AliveParent->PluginInstance->addListener(this);
+				WeakParent = AliveParent;
+			}
+		}
+
+		void DetachFromParent()
+		{
+			if (const TSharedPtr<FManagedPluginInstance> AliveParent = WeakParent.Pin())
+			{
+				AliveParent->PluginInstance->removeListener(this);
+			}
+
+			WeakParent.Reset();
+		}
+	private:
+		TSharedPtr<juce::AudioPluginInstance> PluginInstance{ nullptr };
+		TMap<FString, juce::AudioProcessorParameter*> NameToParameterMap;
+
+		TWeakPtr<FManagedPluginInstance> WeakParent;
+	};
+
+	class FJuceProcessorEditorHandle final : public IJuceProcessorEditorHandle
+	{
+	public:
+		explicit FJuceProcessorEditorHandle(const TWeakPtr<juce::AudioPluginInstance>& InWeakPlugin)
+			: WeakPlugin{ InWeakPlugin }
+		{
+		}
+
+		virtual ~FJuceProcessorEditorHandle()
+		{
+			DetachFromWindow();
+		}
+	public:
+		virtual bool AttachToWindow(const TSharedPtr<FGenericWindow>& Window) override
+		{
+			if (!Window || !IsAttachable())
+			{
+				return false;
+			}
+
+			if (const TSharedPtr<juce::AudioPluginInstance> AlivePlugin = WeakPlugin.Pin())
+			{
+				CreatedEditor = TUniquePtr<juce::AudioProcessorEditor>(AlivePlugin->createEditorIfNeeded());
+			}
+
+			if (CreatedEditor)
+			{
+				CreatedEditor->setOpaque(true);
+				CreatedEditor->setVisible(true);
+				CreatedEditor->addToDesktop(0, Window->GetOSWindowHandle());
+
+				return true;
+			}
+
+			return false;
+		}
+
+		virtual bool DetachFromWindow() override
+		{
+			if (CreatedEditor)
+			{
+				CreatedEditor->removeFromDesktop();
+				CreatedEditor.Reset();
+
+				return true;
+			}
+
+			return false;
+		}
+
+		virtual bool IsAttachable() const override
+		{
+			if (const TSharedPtr<juce::AudioPluginInstance> AlivePlugin = WeakPlugin.Pin())
+			{
+				return !AlivePlugin->getActiveEditor();
+			}
+
+			return false;
+		}
+
+		virtual FIntVector2 GetSize() const override
+		{
+			if (CreatedEditor)
+			{
+				return FIntVector2{ CreatedEditor->getWidth(), CreatedEditor->getHeight() };
+			}
+
+			return FIntVector2::ZeroValue;
+		}
+
+		virtual FIntVector2 GetPosition(const FIntVector2& NewPosition) const override
+		{
+			if (CreatedEditor)
+			{
+				return FIntVector2{ CreatedEditor->getX(), CreatedEditor->getY() };
+			}
+
+			return FIntVector2::ZeroValue;
+		}
+
+		virtual void SetPosition(const FIntVector2& NewPosition) override
+		{
+			if (CreatedEditor)
+			{
+				CreatedEditor->setTopLeftPosition(NewPosition.X, NewPosition.Y);
+			}
+		}
+	private:
+		TUniquePtr<juce::AudioProcessorEditor> CreatedEditor{ nullptr };
+		TWeakPtr<juce::AudioPluginInstance> WeakPlugin;
+	};
+}
+
 struct FJucePluginProxy::FImpl
 {
 public:
@@ -15,8 +191,6 @@ public:
 
 	~FImpl()
 	{
-		// Explicitly destroy the editor first. This forces the destruction to be in the right order.
-		RequestEditorDestroy();
 	}
 
 	FImpl(const FImpl& Other) = delete;
@@ -24,33 +198,27 @@ public:
 	FImpl& operator=(FImpl&& Other) noexcept = default;
 	FImpl& operator=(const FImpl& Other) = delete;
 public:
-	juce::AudioPluginInstance* GetPluginInstance() const
-	{
-		if (!PluginInstance)
-		{
-			PluginInstance = FJucePluginLoader::Get().LoadPlugin(PluginPath);
-		}
-
-		return PluginInstance.Get();
-	}
-
 	TArray<FString> GetParameterNames() const
 	{
-		EnsureParameterCaches();
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
+		{
+			TArray<FString> Names;
+			Root->GetNameParameterMap().GetKeys(Names);
 
-		TArray<FString> Names;
-		NameToParameterMap.GetKeys(Names);
+			return Names;
+		}
 
-		return Names;
+		return TArray<FString>{};
 	}
 
 	TOptional<float> GetParameterValue(const FString& ParameterName) const
 	{
-		EnsureParameterCaches();
-
-		if (NameToParameterMap.Contains(ParameterName))
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
 		{
-			return NameToParameterMap[ParameterName]->getValue();
+			if (const auto& NameParameterMap = Root->GetNameParameterMap(); NameParameterMap.Contains(ParameterName))
+			{
+				return NameParameterMap[ParameterName]->getValue();
+			}
 		}
 
 		return NullOpt;
@@ -58,12 +226,13 @@ public:
 
 	TOptional<FText> GetDisplayValueText(const FString& ParameterName) const
 	{
-		EnsureParameterCaches();
-
-		if (NameToParameterMap.Contains(ParameterName))
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
 		{
-			const FString ValueString = JuceConverters::ToUnrealString(NameToParameterMap[ParameterName]->getCurrentValueAsText());
-			return FText::FromString(ValueString);
+			if (const auto& NameParameterMap = Root->GetNameParameterMap(); NameParameterMap.Contains(ParameterName))
+			{
+				const FString DisplayTextString = JuceConverters::ToUnrealString(NameParameterMap[ParameterName]->getCurrentValueAsText());
+				return FText::FromString(DisplayTextString);
+			}
 		}
 
 		return NullOpt;
@@ -71,76 +240,70 @@ public:
 
 	void SetParameterValue(const FString& ParameterName, float NewValue)
 	{
-		EnsureParameterCaches();
-
-		if (NameToParameterMap.Contains(ParameterName))
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
 		{
-			NameToParameterMap[ParameterName]->setValue(NewValue);
-		}
-	}
-
-	TWeakPtr<juce::AudioProcessorEditor> GetWeakProcessorEditor() const
-	{
-		return ProcessorEditor;
-	}
-
-	void RequestEditorCreation()
-	{
-		if (!ProcessorEditor)
-		{
-			if (juce::AudioPluginInstance* Instance = GetPluginInstance())
+			if (const auto& NameParameterMap = Root->GetNameParameterMap(); NameParameterMap.Contains(ParameterName))
 			{
-				ProcessorEditor = MakeShareable(Instance->createEditorIfNeeded());
+				NameParameterMap[ParameterName]->setValue(NewValue);
 			}
 		}
 	}
 
-	void RequestEditorDestroy()
+	TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> CreateChildInstance() const
 	{
-		if (ProcessorEditor)
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
 		{
-			ProcessorEditor.Reset();
+			return JucePluginProxyInternals::FManagedPluginInstance::Create(PluginPath, Root);
 		}
+
+		return nullptr;
+	}
+
+	TArray<uint8> GetPluginState() const
+	{
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
+		{
+			juce::MemoryBlock JuceBlock;
+			Root->GetInternalPlugin()->getStateInformation(JuceBlock);
+
+			return TArray{ static_cast<uint8*>(JuceBlock.getData()), static_cast<int32>(JuceBlock.getSize()) };
+		}
+
+		return TArray<uint8>{};
+	}
+
+	void SetPluginState(const TArray<uint8>& StateMemoryBlock)
+	{
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
+		{
+			Root->GetInternalPlugin()->setStateInformation(StateMemoryBlock.GetData(), StateMemoryBlock.Num());
+		}
+	}
+
+	TSharedRef<IJuceProcessorEditorHandle> GetProcessorEditorHandle() const
+	{
+		if (const TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> Root = GetRootInstance())
+		{
+			return MakeShared<JucePluginProxyInternals::FJuceProcessorEditorHandle>(Root->GetInternalPlugin());
+		}
+
+		return MakeShared<JucePluginProxyInternals::FJuceProcessorEditorHandle>(nullptr);
 	}
 private:
-	TArray<juce::AudioProcessorParameter*> GetParameters() const
+	TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> GetRootInstance() const
 	{
-		if (const juce::AudioPluginInstance* Instance = GetPluginInstance())
+		if (!RootInstance)
 		{
-			return JuceConverters::ToUnrealArray(Instance->getParameters());
+			RootInstance = JucePluginProxyInternals::FManagedPluginInstance::Create(PluginPath);
 		}
 
-		return TArray<juce::AudioProcessorParameter*>{};
-	}
-
-	void EnsureParameterCaches() const
-	{
-		if (NameToParameterMap.IsEmpty())
-		{
-			NameToParameterMap = ConstructParameterCaches();
-		}
-	}
-
-	TMap<FString, juce::AudioProcessorParameter*> ConstructParameterCaches() const
-	{
-		TMap<FString, juce::AudioProcessorParameter*> Cache;
-
-		for (juce::AudioProcessorParameter* Parameter : GetParameters())
-		{
-			const FString ParameterName{ JuceConverters::ToUnrealString(Parameter->getName(1024)) };
-
-			Cache.Add(ParameterName, Parameter);
-		}
-
-		return Cache;
+		return RootInstance;
 	}
 private:
 	FString PluginPath;
 
-	TSharedPtr<juce::AudioProcessorEditor> ProcessorEditor;
-	mutable TUniquePtr<juce::AudioPluginInstance> PluginInstance{ nullptr };
-
-	mutable TMap<FString, juce::AudioProcessorParameter*> NameToParameterMap;
+	mutable TSharedPtr<juce::AudioProcessorEditor> RootInstanceEditor;
+	mutable TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> RootInstance{ nullptr };
 };
 
 FJucePluginProxy::FJucePluginProxy(const FString& PluginPath)
@@ -197,138 +360,17 @@ void FJucePluginProxy::SetParameterValue(const FString& ParameterName, float New
 	Impl->SetParameterValue(ParameterName, NewValue);
 }
 
-TSharedRef<IJuceProcessorEditorHandle> FJucePluginProxy::CreateEditorHandle()
+TSharedRef<IJuceProcessorEditorHandle> FJucePluginProxy::GetEditorHandle() const
 {
-	class FJuceProcessorEditorHandle : public IJuceProcessorEditorHandle
-	{
-	public:
-		explicit FJuceProcessorEditorHandle(const TWeakPtr<FJucePluginProxy>& InWeakProxy)
-			: WeakProxy{ InWeakProxy }
-		{
-		}
-	public:
-		virtual void Initialize() override
-		{
-			if (FImpl* Impl = GetProxyImpl())
-			{
-				Impl->RequestEditorCreation();
-			}
-		}
-
-		virtual void Finalize() override
-		{
-			if (FImpl* Impl = GetProxyImpl())
-			{
-				Impl->RequestEditorDestroy();
-			}
-		}
-
-		virtual bool IsValid() override
-		{
-			return GetAudioProcessorEditor().IsValid();
-		}
-
-		virtual void AttachToWindow(const TSharedPtr<FGenericWindow>& Window) override
-		{
-			const TSharedPtr<juce::AudioProcessorEditor> ProcessorEditor = GetAudioProcessorEditor();
-
-			if (ProcessorEditor && Window)
-			{
-				ProcessorEditor->setOpaque(true);
-				ProcessorEditor->setVisible(true);
-				ProcessorEditor->addToDesktop(0, Window->GetOSWindowHandle());
-			}
-		}
-
-		virtual void DetachFromWindow() override
-		{
-			if (const TSharedPtr<juce::AudioProcessorEditor> ProcessorEditor = GetAudioProcessorEditor())
-			{
-				ProcessorEditor->removeFromDesktop();
-			}
-		}
-
-		virtual bool IsAttached() const override
-		{
-			if (const TSharedPtr<juce::AudioProcessorEditor> ProcessorEditor = GetAudioProcessorEditor())
-			{
-				return ProcessorEditor->isOnDesktop();
-			}
-
-			return false;
-		}
-
-		virtual FIntVector2 GetSize() const override
-		{
-			if (const TSharedPtr<juce::AudioProcessorEditor> ProcessorEditor = GetAudioProcessorEditor())
-			{
-				return FIntVector2{ ProcessorEditor->getWidth(), ProcessorEditor->getHeight() };
-			}
-
-			return FIntVector2::ZeroValue;
-		}
-
-		virtual FIntVector2 GetPosition(const FIntVector2& NewPosition) const override
-		{
-			if (const TSharedPtr<juce::AudioProcessorEditor> ProcessorEditor = GetAudioProcessorEditor())
-			{
-				return FIntVector2{ ProcessorEditor->getX(), ProcessorEditor->getY() };
-			}
-
-			return FIntVector2::ZeroValue;
-		}
-
-		virtual void SetPosition(const FIntVector2& NewPosition) override
-		{
-			if (const TSharedPtr<juce::AudioProcessorEditor> ProcessorEditor = GetAudioProcessorEditor())
-			{
-				ProcessorEditor->setTopLeftPosition(NewPosition.X, NewPosition.Y);
-			}
-		}
-	private:
-		FImpl* GetProxyImpl() const
-		{
-			if (const TSharedPtr<FJucePluginProxy> Proxy = WeakProxy.Pin())
-			{
-				return Proxy->Impl;
-			}
-
-			return nullptr;
-		}
-
-		TSharedPtr<juce::AudioProcessorEditor> GetAudioProcessorEditor() const
-		{
-			if (FImpl* Impl = GetProxyImpl())
-			{
-				return Impl->GetWeakProcessorEditor().Pin();
-			}
-
-			return nullptr;
-		}
-	private:
-		TWeakPtr<FJucePluginProxy> WeakProxy;
-	};
-
-	return MakeShared<FJuceProcessorEditorHandle>(AsWeak());
+	return Impl->GetProcessorEditorHandle();
 }
 
 TArray<uint8> FJucePluginProxy::GetState() const
 {
-	if (juce::AudioPluginInstance* Instance = Impl->GetPluginInstance())
-	{
-		juce::MemoryBlock JuceBlock;
-		Instance->getStateInformation(JuceBlock);
-
-		return TArray{ static_cast<uint8*>(JuceBlock.getData()), static_cast<int32>(JuceBlock.getSize()) };
-	}
-
-	return TArray<uint8>{};
+	return Impl->GetPluginState();
 }
 
 void FJucePluginProxy::SetState(const TArray<uint8>& StateMemoryBlock)
 {
-	if (juce::AudioPluginInstance* Instance = Impl->GetPluginInstance())
-	{
-		Instance->setStateInformation(StateMemoryBlock.GetData(), StateMemoryBlock.Num());
-	}
+	Impl->SetPluginState(StateMemoryBlock);
 }

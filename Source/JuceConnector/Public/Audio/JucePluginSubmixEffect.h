@@ -22,7 +22,9 @@ public:
 	virtual void OnProcessAudio(const FSoundEffectSubmixInputData& InData, FSoundEffectSubmixOutputData& OutData) override;
 private:
 	float SampleRate{ 44100.0f };
+
 	TSharedPtr<IJuceAudioProcessingHandle> AudioProcessingHandle{ nullptr };
+	std::atomic_flag bProcessReadyFlag;
 };
 
 UCLASS(BlueprintType)

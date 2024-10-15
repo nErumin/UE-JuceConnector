@@ -13,10 +13,15 @@
 #include "Settings/Customizations/JucePluginDirectoryCustomization.h"
 #include "Style/JuceConnectorStyle.h"
 
+#include "Juce/JuceHeader.h"
+
 #define LOCTEXT_NAMESPACE "FJuceConnectorModule"
 
 void FJuceConnectorModule::StartupModule()
 {
+	// Use the game thread as message thread.
+	juce::MessageManager::getInstance();
+
 	FJuceConnectorStyle::Initialize();
 
 	RegisterAssetTypeActions();

@@ -1,5 +1,6 @@
 ﻿#include "Audio/JucePluginSubmixEffect.h"
 
+#include "Engine/AssetManager.h"
 #include "Juce/Plugins/JuceAudioProcessingHandle.h"
 #include "Juce/Utils/JuceMessageUtils.h"
 
@@ -10,21 +11,27 @@ void FJucePluginSubmixEffect::Init(const FSoundEffectSubmixInitData& InInitData)
 
 void FJucePluginSubmixEffect::OnPresetChanged()
 {
+	ensure(!IsInGameThread());
+
 	GET_EFFECT_SETTINGS(JucePluginSubmixEffect)
 
 	AudioProcessingHandle.Reset();
 	bProcessReadyFlag.clear();
-
+	
 	if (const UJuceHostedPluginAsset* Asset = Settings.PluginAsset.Get())
 	{
-		if (const TSharedPtr<FJucePluginProxy> AliveProxy = Asset->GetPluginProxy().Pin())
+		SetProcessingHandleFromAsset(Asset);
+	}
+	else
+	{
+		AsyncTask(ENamedThreads::GameThread, [this, ObjectPath = Settings.PluginAsset.ToSoftObjectPath()]
 		{
-			JuceMessageUtils::ExecuteOnMessageThreadAsync([this, AliveProxy]() mutable
-			{
-				AudioProcessingHandle = AliveProxy->CreateNewProcessingHandle();
-				bProcessReadyFlag.test_and_set();
-			});
-		}
+			StreamableAssetHandle = UAssetManager::GetStreamableManager().RequestAsyncLoad
+			(
+				ObjectPath,
+				FStreamableDelegate::CreateRaw(this, &FJucePluginSubmixEffect::OnPluginAssetLoadFinished)
+			);
+		});
 	}
 }
 
@@ -45,6 +52,33 @@ void FJucePluginSubmixEffect::OnProcessAudio(const FSoundEffectSubmixInputData& 
 		}
 
 		AudioProcessingHandle->ProcessBlock(InData.AudioBuffer, OutData.AudioBuffer);
+	}
+}
+
+void FJucePluginSubmixEffect::OnPluginAssetLoadFinished()
+{
+	if (StreamableAssetHandle && StreamableAssetHandle->HasLoadCompleted())
+	{
+		const UJuceHostedPluginAsset* Asset = Cast<UJuceHostedPluginAsset>(StreamableAssetHandle->GetLoadedAsset());
+
+		SetProcessingHandleFromAsset(Asset);
+	}
+}
+
+void FJucePluginSubmixEffect::SetProcessingHandleFromAsset(const UJuceHostedPluginAsset* Asset)
+{
+	if (!IsValid(Asset))
+	{
+		return;
+	}
+
+	if (const TSharedPtr<FJucePluginProxy> AliveProxy = Asset->GetPluginProxy().Pin())
+	{
+		JuceMessageUtils::ExecuteOnMessageThreadAsync([this, AliveProxy]() mutable
+		{
+			AudioProcessingHandle = AliveProxy->CreateNewProcessingHandle();
+			bProcessReadyFlag.test_and_set();
+		});
 	}
 }
 

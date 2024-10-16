@@ -36,6 +36,11 @@ void UJuceHostedPluginAsset::BeginDestroy()
 	}
 }
 
+FPrimaryAssetId UJuceHostedPluginAsset::GetPrimaryAssetId() const
+{
+	return FPrimaryAssetId{ TEXT("JuceHostedPluginAsset"), GetFName() };
+}
+
 TWeakPtr<FJucePluginProxy> UJuceHostedPluginAsset::GetPluginProxy() const
 {
 	if (!PluginProxy && !PluginPath.IsEmpty())

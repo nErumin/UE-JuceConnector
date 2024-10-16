@@ -14,6 +14,8 @@ public:
 public:
 	virtual void Serialize(FArchive& Ar) override;
 	virtual void BeginDestroy() override;
+
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 public:
 	TWeakPtr<FJucePluginProxy> GetPluginProxy() const;
 

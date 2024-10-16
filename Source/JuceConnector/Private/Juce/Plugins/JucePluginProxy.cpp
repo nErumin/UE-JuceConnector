@@ -276,6 +276,22 @@ namespace JucePluginProxyInternals
 			}
 		}
 
+		virtual void ProcessBlock(const TArrayView<float>& InputBuffer, const TArrayView<float>& OutputBuffer) override
+		{
+			if (ManagedInstance && IsPrepared())
+			{
+				const int NumSamples = InputBuffer.Num() / *PreparedNumChannels;
+
+				juce::AudioBuffer<float> SampleBuffer{ *PreparedNumChannels, NumSamples };
+				juce::MidiBuffer MidiBuffer;
+
+				JuceConverters::FillJuceBuffer(SampleBuffer, InputBuffer, *PreparedNumChannels);
+				ManagedInstance->GetInternalPlugin()->processBlock(SampleBuffer, MidiBuffer);
+
+				JuceConverters::FillUnrealAudioBuffer(OutputBuffer, SampleBuffer);
+			}
+		}
+
 		virtual void Reset() override
 		{
 			if (ManagedInstance)

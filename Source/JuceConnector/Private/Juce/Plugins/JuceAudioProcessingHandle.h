@@ -17,5 +17,6 @@ public:
 	virtual bool IsPrepared() const = 0;
 
 	virtual void ProcessBlock(const Audio::FAlignedFloatBuffer* InputBuffer, Audio::FAlignedFloatBuffer* OutputBuffer) = 0;
+	virtual void ProcessBlock(const TArrayView<float>& InputBuffer, const TArrayView<float>& OutputBuffer) = 0;
 	virtual void Reset() = 0;
 };

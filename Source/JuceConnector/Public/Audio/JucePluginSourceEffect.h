@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Audio/JucePluginEffectProcessor.h"
 #include "Sound/SoundEffectSource.h"
 #include "Assets/JuceHostedPluginAsset.h"
-#include "Engine/StreamableManager.h"
 #include "JucePluginSourceEffect.generated.h"
 
 USTRUCT(BlueprintType)
@@ -23,16 +23,10 @@ public:
 	virtual void OnPresetChanged() override;
 	virtual void ProcessAudio(const FSoundEffectSourceInputData& InData, float* OutAudioBufferData) override;
 private:
-	void OnPluginAssetLoadFinished();
-
-	void SetProcessingHandleFromAsset(const UJuceHostedPluginAsset* Asset);
-private:
 	float SampleRate{ 44100.0f };
 	int NumChannel{ 2 };
 
-	TSharedPtr<IJuceAudioProcessingHandle> AudioProcessingHandle{ nullptr };
-	TSharedPtr<FStreamableHandle> StreamableAssetHandle{ nullptr };
-	std::atomic_flag bProcessReadyFlag;
+	TSharedPtr<FJucePluginEffectProcessor> EffectProcessor{ nullptr };
 };
 
 UCLASS(BlueprintType, meta = (BlueprintSpawnableComponent))

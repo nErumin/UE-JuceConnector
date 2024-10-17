@@ -12,6 +12,8 @@
 #include "Settings/JucePluginScanSettings.h"
 #include "Settings/Customizations/JucePluginDirectoryCustomization.h"
 #include "Style/JuceConnectorStyle.h"
+#include "MetasoundNodeRegistrationMacro.h"
+#include "Audio/JucePluginMetasoundNode.h"
 
 #include "Juce/JuceHeader.h"
 
@@ -26,6 +28,7 @@ void FJuceConnectorModule::StartupModule()
 
 	RegisterAssetTypeActions();
 	RegisterTypeCustomizations();
+	RegisterAudioProcessTypes();
 }
 
 void FJuceConnectorModule::ShutdownModule()
@@ -96,6 +99,16 @@ void FJuceConnectorModule::UnregisterTypeCustomizations()
 		PropertyModule->UnregisterCustomPropertyTypeLayout(FJucePluginDirectory::StaticStruct()->GetFName());
 		PropertyModule->UnregisterCustomClassLayout(UJuceHostedPluginAsset::StaticClass()->GetFName());
 	}
+}
+
+void FJuceConnectorModule::RegisterAudioProcessTypes()
+{
+	FMetasoundFrontendRegistryContainer::Get()->EnqueueInitCommand([]
+	{
+		Metasound::RegisterNodeWithFrontend<JucePluginMetasound::FProcessorNode>();
+	});
+
+	FMetasoundFrontendRegistryContainer::Get()->RegisterPendingNodes();
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -5,7 +5,7 @@
 
 class IAssetTypeActions;
 
-class FJuceConnectorModule : public IJuceConnectorModule
+class FJuceConnectorModule final : public IJuceConnectorModule
 {
 public:
 	virtual void ShutdownModule() override;
@@ -16,6 +16,8 @@ private:
 
 	void RegisterTypeCustomizations();
 	void UnregisterTypeCustomizations();
+
+	void RegisterAudioProcessTypes();
 private:
 	TArray<TSharedRef<IAssetTypeActions>> RegisteredAssetTypeActions;
 };

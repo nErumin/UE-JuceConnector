@@ -20,7 +20,10 @@ public class JuceConnector : ModuleRules
 		PublicDependencyModuleNames.AddRange(new[]
 		{
 			"Core",
-			"DeveloperSettings"
+			"DeveloperSettings",
+			"MetasoundFrontend",
+			"MetasoundGraphCore",
+			"MetasoundStandardNodes"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new[]
@@ -34,6 +37,7 @@ public class JuceConnector : ModuleRules
 			"Engine",
 			"Slate",
 			"SlateCore",
+			"MetasoundEngine"
 		});
 	}
 

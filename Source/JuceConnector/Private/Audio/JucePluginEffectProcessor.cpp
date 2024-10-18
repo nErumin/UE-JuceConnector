@@ -7,7 +7,7 @@
 
 FJucePluginEffectProcessor::~FJucePluginEffectProcessor()
 {
-	if (!IsInGameThread())
+	if (!IsInGameThread() && StreamableAssetHandle)
 	{
 		AsyncTask(ENamedThreads::GameThread, [Handle = StreamableAssetHandle]
 		{
@@ -73,6 +73,7 @@ void FJucePluginEffectProcessor::SetProcessingHandleFromAsset(const UJuceHostedP
 	{
 		return;
 	}
+
 	if (const TSharedPtr<FJucePluginProxy> AliveProxy = Asset->GetPluginProxy().Pin())
 	{
 		JuceMessageUtils::ExecuteOnMessageThreadAsync([this, AliveProxy]() mutable

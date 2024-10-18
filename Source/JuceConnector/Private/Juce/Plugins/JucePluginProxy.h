@@ -33,8 +33,6 @@ public:
 	TArray<uint8> GetState() const;
 	void SetState(const TArray<uint8>& StateMemoryBlock);
 private:
-
-private:
 	struct FImpl;
 	FImpl* Impl;
 };

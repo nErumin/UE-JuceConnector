@@ -1,6 +1,7 @@
 ﻿#include "Assets/JuceHostedPluginAsset.h"
 
 #include "Assets/JuceHostedPluginAssetVersion.h"
+#include "Audio/JucePluginMetasoundAssetData.h"
 
 FName UJuceHostedPluginAsset::GetPluginPathPropertyName()
 {
@@ -39,6 +40,11 @@ void UJuceHostedPluginAsset::BeginDestroy()
 FPrimaryAssetId UJuceHostedPluginAsset::GetPrimaryAssetId() const
 {
 	return FPrimaryAssetId{ TEXT("JuceHostedPluginAsset"), GetFName() };
+}
+
+TSharedPtr<Audio::IProxyData> UJuceHostedPluginAsset::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
+{
+	return MakeShared<Metasound::FJucePluginAssetProxy>(this);
 }
 
 TWeakPtr<FJucePluginProxy> UJuceHostedPluginAsset::GetPluginProxy() const

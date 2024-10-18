@@ -42,6 +42,7 @@ namespace JucePluginMetasound
 			FInputVertexInterface
 			{
 				TInputDataVertex<FAudioBuffer>{ METASOUND_GET_PARAM_NAME_AND_METADATA(Params::InParamAudio) },
+				TInputDataVertex<FJucePluginAssetData>{ METASOUND_GET_PARAM_NAME_AND_METADATA(Params::InParamPluginAsset) }
 			},
 			FOutputVertexInterface
 			{
@@ -58,7 +59,8 @@ namespace JucePluginMetasound
 
 		FInputs Inputs
 		{
-			.AudioInput = InputData.GetOrCreateDefaultDataReadReference<FAudioBuffer>(METASOUND_GET_PARAM_NAME(Params::InParamAudio), InParams.OperatorSettings)
+			.AudioInput = InputData.GetOrCreateDefaultDataReadReference<FAudioBuffer>(METASOUND_GET_PARAM_NAME(Params::InParamAudio), InParams.OperatorSettings),
+			.PluginAsset = InputData.GetOrConstructDataReadReference<FJucePluginAssetData>(METASOUND_GET_PARAM_NAME(Params::InParamPluginAsset))
 		};
 
 		return MakeUnique<FProcessOperator>(InParams, MoveTemp(Inputs));
@@ -66,13 +68,15 @@ namespace JucePluginMetasound
 
 	FProcessOperator::FProcessOperator(const FBuildOperatorParams& InParams, FInputs InInputs)
 		: Inputs{ MoveTemp(InInputs) },
-		  Outputs{ .AudioOutput = FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings) }
+		  Outputs{ .AudioOutput = FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings) },
+		  SampleRate{ InParams.OperatorSettings.GetSampleRate() }
 	{
 	}
 
 	void FProcessOperator::BindInputs(FInputVertexInterfaceData& InVertexData)
 	{
 		InVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(Params::InParamAudio), Inputs.AudioInput);
+		InVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(Params::InParamPluginAsset), Inputs.PluginAsset);
 	}
 
 	void FProcessOperator::BindOutputs(FOutputVertexInterfaceData& InVertexData)
@@ -82,10 +86,34 @@ namespace JucePluginMetasound
 
 	void FProcessOperator::Execute()
 	{
+		if (const TSharedPtr<FJucePluginAssetProxy> AssetProxy = Inputs.PluginAsset->GetProxy())
+		{
+			const FAudioBuffer* InputBuffer = Inputs.AudioInput.Get();
+			FAudioBuffer* OutputBuffer = Outputs.AudioOutput.Get();
+
+			if (FJucePluginEffectProcessor& Processor = AssetProxy->GetProcessor(); Processor.IsPrepared())
+			{
+				const FJucePluginEffectProcessContext Context
+				{
+					.SampleRate = SampleRate,
+					.NumChannel = 2
+				};
+
+				Processor.ProcessBlock(*InputBuffer, *OutputBuffer, Context);
+			}
+			else
+			{
+				FMemory::Memcpy(OutputBuffer->GetData(), InputBuffer->GetData(), sizeof(float) * OutputBuffer->Num());
+			}
+		}
 	}
 
 	void FProcessOperator::Reset(const IOperator::FResetParams& InParams)
 	{
+		if (const TSharedPtr<FJucePluginAssetProxy> AssetProxy = Inputs.PluginAsset->GetProxy())
+		{
+			AssetProxy->GetProcessor().Reset();
+		}
 	}
 
 	FProcessorNode::FProcessorNode(const FNodeInitData& InitData)

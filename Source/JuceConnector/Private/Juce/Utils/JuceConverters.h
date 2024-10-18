@@ -27,7 +27,7 @@ namespace JuceConverters
 		return juce::Array<TElement>{ UnrealArray.GetData(), UnrealArray.Num() };
 	}
 
-	inline void FillJuceBuffer(juce::AudioBuffer<float>& JuceBuffer, const TArrayView<float>& UnrealBuffer, int NumChannels)
+	inline void FillJuceBuffer(juce::AudioBuffer<float>& JuceBuffer, const TArrayView<const float>& UnrealBuffer, int NumChannels)
 	{
 		const int NumSamples = UnrealBuffer.Num();
 		const float* RawUnrealBuffer = UnrealBuffer.GetData();

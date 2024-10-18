@@ -2,6 +2,8 @@
 
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
+#include "MetasoundDataTypeRegistrationMacro.h"
+#include "MetasoundEditorModule.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
@@ -108,7 +110,30 @@ void FJuceConnectorModule::RegisterAudioProcessTypes()
 		Metasound::RegisterNodeWithFrontend<JucePluginMetasound::FProcessorNode>();
 	});
 
+	FMetasoundFrontendRegistryContainer::Get()->EnqueueInitCommand([]
+	{
+		Metasound::RegisterDataTypeWithFrontend<Metasound::FJucePluginAssetData, Metasound::ELiteralType::UObjectProxy, UJuceHostedPluginAsset>();
+	});
+
 	FMetasoundFrontendRegistryContainer::Get()->RegisterPendingNodes();
+
+	{
+		using namespace Metasound;
+		using namespace Metasound::Editor;
+
+		IMetasoundEditorModule& MetaSoundEditorModule = FModuleManager::LoadModuleChecked<IMetasoundEditorModule>("MetaSoundEditor");
+
+		const FGraphPinParams PinParams
+		{
+			.PinCategory = "object",
+			.PinSubcategory = NAME_None,
+			.PinColor = nullptr,
+			.PinConnectedIcon = nullptr,
+			.PinDisconnectedIcon = nullptr
+		};
+
+		MetaSoundEditorModule.RegisterCustomPinType("JucePluginAssetData", PinParams);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

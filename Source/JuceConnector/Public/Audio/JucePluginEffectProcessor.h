@@ -19,7 +19,8 @@ public:
 	void PrepareProcess(const TSoftObjectPtr<UJuceHostedPluginAsset>& InAsset);
 	bool IsPrepared() const;
 
-	void ProcessBlock(const TArrayView<float>& InputBuffer, const TArrayView<float>& OutputBuffer, const FJucePluginEffectProcessContext& Context = FJucePluginEffectProcessContext{});
+	void ProcessBlock(const TArrayView<const float>& InputBuffer, const TArrayView<float>& OutputBuffer, const FJucePluginEffectProcessContext& Context = FJucePluginEffectProcessContext{});
+	void Reset();
 private:
 	void OnPluginAssetLoadFinished();
 	void SetProcessingHandleFromAsset(const UJuceHostedPluginAsset* Asset);

@@ -5,8 +5,8 @@
 
 class FJucePluginProxy;
 
-UCLASS(BlueprintType)
-class JUCECONNECTOR_API UJuceHostedPluginAsset : public UObject
+UCLASS(BlueprintType, EditInlineNew)
+class JUCECONNECTOR_API UJuceHostedPluginAsset : public UObject, public IAudioProxyDataFactory
 {
 	GENERATED_BODY()
 public:
@@ -16,6 +16,7 @@ public:
 	virtual void BeginDestroy() override;
 
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
+	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 public:
 	TWeakPtr<FJucePluginProxy> GetPluginProxy() const;
 

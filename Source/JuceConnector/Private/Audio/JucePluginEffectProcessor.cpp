@@ -45,7 +45,7 @@ bool FJucePluginEffectProcessor::IsPrepared() const
 	return bProcessReadyFlag.test() && AudioProcessingHandle;
 }
 
-void FJucePluginEffectProcessor::ProcessBlock(const TArrayView<float>& InputBuffer, const TArrayView<float>& OutputBuffer, const FJucePluginEffectProcessContext& Context)
+void FJucePluginEffectProcessor::ProcessBlock(const TArrayView<const float>& InputBuffer, const TArrayView<float>& OutputBuffer, const FJucePluginEffectProcessContext& Context)
 {
 	if (IsPrepared())
 	{
@@ -56,6 +56,11 @@ void FJucePluginEffectProcessor::ProcessBlock(const TArrayView<float>& InputBuff
 
 		AudioProcessingHandle->ProcessBlock(InputBuffer, OutputBuffer);
 	}
+}
+
+void FJucePluginEffectProcessor::Reset()
+{
+	AudioProcessingHandle->Reset();
 }
 
 void FJucePluginEffectProcessor::OnPluginAssetLoadFinished()

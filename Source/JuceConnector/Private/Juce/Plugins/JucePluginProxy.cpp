@@ -260,7 +260,7 @@ namespace JucePluginProxyInternals
 			return PreparedNumChannels.IsSet();
 		}
 
-		virtual void ProcessBlock(const TArrayView<float>& InputBuffer, const TArrayView<float>& OutputBuffer) override
+		virtual void ProcessBlock(const TArrayView<const float>& InputBuffer, const TArrayView<float>& OutputBuffer) override
 		{
 			if (ManagedInstance && IsPrepared())
 			{

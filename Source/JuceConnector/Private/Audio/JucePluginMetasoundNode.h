@@ -6,6 +6,8 @@
 #include "MetasoundExecutableOperator.h"
 #include "MetasoundFacade.h"
 
+#include "Audio/JucePluginMetasoundAssetData.h"
+
 #define LOCTEXT_NAMESPACE "FJucePluginMetasoundNode"
 
 namespace JucePluginMetasound
@@ -18,6 +20,7 @@ namespace JucePluginMetasound
 		struct FInputs
 		{
 			FAudioBufferReadRef AudioInput;
+			FJucePluginAssetDataReadRef PluginAsset;
 		};
 
 		struct FOutputs
@@ -43,12 +46,32 @@ namespace JucePluginMetasound
 	private:
 		FInputs Inputs;
 		FOutputs Outputs;
+
+		float SampleRate;
+		int NumSamples;
 	};
 
 	class FProcessorNode final : public FNodeFacade
 	{
 	public:
 		explicit FProcessorNode(const FNodeInitData& InitData);
+	};
+
+	class FPluginAssetProxy final : public Audio::TProxyData<FPluginAssetProxy>
+	{
+	public:
+		IMPL_AUDIOPROXY_CLASS(FPluginAssetProxy)
+	};
+
+	class FPluginAssetData final
+	{
+	public:
+		explicit FPluginAssetData(const TSharedPtr<Audio::IProxyData>& InInitData)
+			: AssetProxy{ StaticCastSharedPtr<FPluginAssetProxy>(InInitData) }
+		{
+		}
+	private:
+		TSharedPtr<FPluginAssetProxy> AssetProxy;
 	};
 }
 

@@ -21,6 +21,7 @@ public class JuceConnector : ModuleRules
 		{
 			"Core",
 			"DeveloperSettings",
+			"AudioExtensions",
 			"MetasoundFrontend",
 			"MetasoundGraphCore",
 			"MetasoundStandardNodes"
@@ -37,7 +38,8 @@ public class JuceConnector : ModuleRules
 			"Engine",
 			"Slate",
 			"SlateCore",
-			"MetasoundEngine"
+			"MetasoundEngine",
+			"MetasoundEditor"
 		});
 	}
 

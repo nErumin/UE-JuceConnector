@@ -3,7 +3,7 @@
 #include "JucePluginScanSettings.generated.h"
 
 USTRUCT()
-struct FJucePluginDirectory
+struct JUCECONNECTOREDITOR_API FJucePluginDirectory
 {
 	GENERATED_BODY()
 public:
@@ -16,7 +16,7 @@ private:
 };
 
 UCLASS(Config = "EditorPerProjectUserSettings")
-class JUCECONNECTOR_API UJucePluginScanSettings : public UDeveloperSettings
+class JUCECONNECTOREDITOR_API UJucePluginScanSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
 public:

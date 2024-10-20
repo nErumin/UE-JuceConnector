@@ -1,13 +1,13 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
-#include "JuceHostedPluginAssetFactory.generated.h"
+#include "JucePluginAssetFactory.generated.h"
 
 UCLASS()
-class UJuceHostedPluginAssetFactory : public UFactory
+class UJucePluginAssetFactory : public UFactory
 {
 	GENERATED_BODY()
 public:
-	UJuceHostedPluginAssetFactory();
+	UJucePluginAssetFactory();
 public:
 	virtual bool ConfigureProperties() override;
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn) override;

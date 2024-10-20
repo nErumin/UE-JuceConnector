@@ -1,7 +1,4 @@
 ﻿#include "Audio/JucePluginSubmixEffect.h"
-
-#include "Engine/AssetManager.h"
-#include "Juce/Plugins/JuceAudioProcessingHandle.h"
 #include "Juce/Utils/JuceMessageUtils.h"
 
 void FJucePluginSubmixEffect::Init(const FSoundEffectSubmixInitData& InInitData)

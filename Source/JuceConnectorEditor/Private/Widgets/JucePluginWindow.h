@@ -4,13 +4,13 @@
 #include "Widgets/SWindow.h"
 
 class IJuceProcessorEditorHandle;
-class FJucePluginProxy;
+class IJucePluginProxy;
 
 class SJucePluginWindow : public SWindow
 {
 	SLATE_BEGIN_ARGS(SJucePluginWindow) {}
 		SLATE_ARGUMENT(FText, Title)
-		SLATE_ARGUMENT(TWeakPtr<FJucePluginProxy>, PluginProxy)
+		SLATE_ARGUMENT(TWeakPtr<IJucePluginProxy>, PluginProxy)
 	SLATE_END_ARGS()
 public:
 	void Construct(const FArguments& InArgs);

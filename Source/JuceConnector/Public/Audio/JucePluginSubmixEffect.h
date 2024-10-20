@@ -1,7 +1,8 @@
 ﻿#pragma once
+
 #include "CoreMinimal.h"
 #include "Audio/JucePluginEffectProcessor.h"
-#include "Assets/JuceHostedPluginAsset.h"
+#include "Assets/JucePluginAsset.h"
 #include "Sound/SoundEffectSubmix.h"
 #include "JucePluginSubmixEffect.generated.h"
 
@@ -11,7 +12,7 @@ struct JUCECONNECTOR_API FJucePluginSubmixEffectSettings
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Plugin")
-	TSoftObjectPtr<UJuceHostedPluginAsset> PluginAsset;
+	TSoftObjectPtr<UJucePluginAsset> PluginAsset;
 };
 
 class JUCECONNECTOR_API FJucePluginSubmixEffect final : public FSoundEffectSubmix

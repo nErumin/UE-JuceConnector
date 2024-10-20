@@ -1,13 +1,13 @@
 ﻿#include "JucePluginWindow.h"
 
-#include "Juce/Plugins/JucePluginProxy.h"
-#include "Juce/Plugins/JuceProcessorEditorHandle.h"
+#include "Juce/JucePluginProxy.h"
+#include "Juce/JuceProcessorEditorHandle.h"
 
 #define LOCTEXT_NAMESPACE "SJucePluginWindow"
 
 void SJucePluginWindow::Construct(const FArguments& InArgs)
 {
-	if (const TSharedPtr<FJucePluginProxy> AliveProxy = InArgs._PluginProxy.Pin())
+	if (const TSharedPtr<IJucePluginProxy> AliveProxy = InArgs._PluginProxy.Pin())
 	{
 		EditorHandle = AliveProxy->GetEditorHandle();
 	}

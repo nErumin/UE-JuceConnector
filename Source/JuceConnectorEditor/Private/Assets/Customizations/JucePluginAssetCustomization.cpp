@@ -3,7 +3,7 @@
 #include "DetailCategoryBuilder.h"
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
-#include "Assets/JuceHostedPluginAsset.h"
+#include "Assets/JucePluginAsset.h"
 #include "Widgets/JucePluginWindow.h"
 #include "Widgets/Input/SSlider.h"
 
@@ -11,13 +11,13 @@
 
 namespace JucePluginAssetCustomizationInternal
 {
-	TArray<UJuceHostedPluginAsset*> GetAlivePluginAssetObjects(const TArray<TWeakObjectPtr<UObject>>& WeakObjects)
+	TArray<UJucePluginAsset*> GetAlivePluginAssetObjects(const TArray<TWeakObjectPtr<UObject>>& WeakObjects)
 	{
-		TArray<UJuceHostedPluginAsset*> AliveObjects;
+		TArray<UJucePluginAsset*> AliveObjects;
 
 		for (const TWeakObjectPtr<UObject>& WeakObject : WeakObjects)
 		{
-			if (UJuceHostedPluginAsset* CastedObject = Cast<UJuceHostedPluginAsset>(WeakObject.Get()))
+			if (UJucePluginAsset* CastedObject = Cast<UJucePluginAsset>(WeakObject.Get()))
 			{
 				AliveObjects.Add(CastedObject);
 			}
@@ -26,7 +26,7 @@ namespace JucePluginAssetCustomizationInternal
 		return AliveObjects;
 	}
 
-	TArray<UJuceHostedPluginAsset*> GetAlivePluginAssetsBeingCustomized(const IDetailLayoutBuilder& DetailBuilder)
+	TArray<UJucePluginAsset*> GetAlivePluginAssetsBeingCustomized(const IDetailLayoutBuilder& DetailBuilder)
 	{
 		TArray<TWeakObjectPtr<UObject>> CustomizedObjects;
 		DetailBuilder.GetObjectsBeingCustomized(CustomizedObjects);
@@ -34,7 +34,7 @@ namespace JucePluginAssetCustomizationInternal
 		return GetAlivePluginAssetObjects(CustomizedObjects);
 	}
 
-	bool ContainsMultipleSources(const TArray<UJuceHostedPluginAsset*>& PluginAssets)
+	bool ContainsMultipleSources(const TArray<UJucePluginAsset*>& PluginAssets)
 	{
 		if (PluginAssets.IsEmpty())
 		{
@@ -68,7 +68,7 @@ void FJucePluginAssetCustomization::CustomizeDetails(IDetailLayoutBuilder& Detai
 
 void FJucePluginAssetCustomization::CustomizePathProperty(IDetailLayoutBuilder& DetailBuilder)
 {
-	const TSharedRef<IPropertyHandle> PathHandle = DetailBuilder.GetProperty(UJuceHostedPluginAsset::GetPluginPathPropertyName());
+	const TSharedRef<IPropertyHandle> PathHandle = DetailBuilder.GetProperty(UJucePluginAsset::GetPluginPathPropertyName());
 	PathHandle->MarkHiddenByCustomization();
 
 	IDetailCategoryBuilder& CategoryBuilder = DetailBuilder.EditCategory(PathHandle->GetDefaultCategoryName());
@@ -107,7 +107,7 @@ void FJucePluginAssetCustomization::CustomizePluginParameterCategory(IDetailLayo
 {
 	using namespace JucePluginAssetCustomizationInternal;
 
-	const TArray<UJuceHostedPluginAsset*> AliveAssets = GetAlivePluginAssetsBeingCustomized(DetailBuilder);
+	const TArray<UJucePluginAsset*> AliveAssets = GetAlivePluginAssetsBeingCustomized(DetailBuilder);
 
 	if (AliveAssets.IsEmpty() || ContainsMultipleSources(AliveAssets))
 	{
@@ -115,21 +115,21 @@ void FJucePluginAssetCustomization::CustomizePluginParameterCategory(IDetailLayo
 		return;
 	}
 
-	TArray<TWeakPtr<FJucePluginProxy>> WeakProxies;
+	TArray<TWeakPtr<IJucePluginProxy>> WeakProxies;
 	TArray<FString> ParameterNames;
 
-	for (const UJuceHostedPluginAsset* Asset : AliveAssets)
+	for (const UJucePluginAsset* Asset : AliveAssets)
 	{
-		const TWeakPtr<FJucePluginProxy>& WeakProxy = WeakProxies.Add_GetRef(Asset->GetPluginProxy());
+		const TWeakPtr<IJucePluginProxy>& WeakProxy = WeakProxies.Add_GetRef(Asset->GetPluginProxy());
 
-		if (const TSharedPtr<FJucePluginProxy> AliveProxy = WeakProxy.Pin(); ParameterNames.IsEmpty())
+		if (const TSharedPtr<IJucePluginProxy> AliveProxy = WeakProxy.Pin(); ParameterNames.IsEmpty())
 		{
 			ParameterNames = AliveProxy->GetParameterNames();
 		}
 	}
 
 	IDetailCategoryBuilder& CategoryBuilder = DetailBuilder.EditCategory("Parameters");
-	TSharedPtr<IPropertyHandle> Handle = DetailBuilder.GetProperty(UJuceHostedPluginAsset::GetPluginPathPropertyName());
+	TSharedPtr<IPropertyHandle> Handle = DetailBuilder.GetProperty(UJucePluginAsset::GetPluginPathPropertyName());
 
 	for (const FString& ParameterName : ParameterNames)
 	{
@@ -169,7 +169,7 @@ void FJucePluginAssetCustomization::CustomizePluginParameterCategory(IDetailLayo
 	}
 }
 
-bool FJucePluginAssetCustomization::IsParameterSliderEnabled(FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies) const
+bool FJucePluginAssetCustomization::IsParameterSliderEnabled(FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies) const
 {
 	if (WeakProxies.IsEmpty())
 	{
@@ -178,11 +178,11 @@ bool FJucePluginAssetCustomization::IsParameterSliderEnabled(FString ParameterNa
 
 	TOptional<float> UniqueValue;
 
-	for (const TWeakPtr<FJucePluginProxy>& WeakProxy : WeakProxies)
+	for (const TWeakPtr<IJucePluginProxy>& WeakProxy : WeakProxies)
 	{
-		if (const TSharedPtr<FJucePluginProxy> AliveProxy = WeakProxy.Pin())
+		if (const TSharedPtr<IJucePluginProxy> AliveProxy = WeakProxy.Pin())
 		{
-			const float Value = AliveProxy->GetNormalizedParameterValue(ParameterName);
+			const float Value = AliveProxy->GetNormalizedParameterValue(ParameterName, 0.0f);
 
 			if (UniqueValue && !FMath::IsNearlyEqual(*UniqueValue, Value))
 			{
@@ -196,41 +196,41 @@ bool FJucePluginAssetCustomization::IsParameterSliderEnabled(FString ParameterNa
 	return true;
 }
 
-float FJucePluginAssetCustomization::GetParameterSliderValue(FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies) const
+float FJucePluginAssetCustomization::GetParameterSliderValue(FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies) const
 {
 	float SliderValue = 0.0f;
 
-	for (const TWeakPtr<FJucePluginProxy>& WeakProxy : WeakProxies)
+	for (const TWeakPtr<IJucePluginProxy>& WeakProxy : WeakProxies)
 	{
-		if (const TSharedPtr<FJucePluginProxy> AliveProxy = WeakProxy.Pin())
+		if (const TSharedPtr<IJucePluginProxy> AliveProxy = WeakProxy.Pin())
 		{
-			SliderValue = AliveProxy->GetNormalizedParameterValue(ParameterName);
+			SliderValue = AliveProxy->GetNormalizedParameterValue(ParameterName, 0.0f);
 		}
 	}
 
 	return SliderValue;
 }
 
-void FJucePluginAssetCustomization::OnParameterSliderValueChanged(float NewValue, FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies)
+void FJucePluginAssetCustomization::OnParameterSliderValueChanged(float NewValue, FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies)
 {
 	ensure(NewValue >= 0.0f && NewValue <= 1.0f);
 
-	for (const TWeakPtr<FJucePluginProxy>& WeakProxy : WeakProxies)
+	for (const TWeakPtr<IJucePluginProxy>& WeakProxy : WeakProxies)
 	{
-		if (const TSharedPtr<FJucePluginProxy> AliveProxy = WeakProxy.Pin())
+		if (const TSharedPtr<IJucePluginProxy> AliveProxy = WeakProxy.Pin())
 		{
 			AliveProxy->SetParameterValue(ParameterName, NewValue);
 		}
 	}
 }
 
-FText FJucePluginAssetCustomization::GetParameterValueText(FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies) const
+FText FJucePluginAssetCustomization::GetParameterValueText(FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies) const
 {
 	TSet<FString> ValueStringSet;
 
-	for (const TWeakPtr<FJucePluginProxy>& WeakProxy : WeakProxies)
+	for (const TWeakPtr<IJucePluginProxy>& WeakProxy : WeakProxies)
 	{
-		if (const TSharedPtr<FJucePluginProxy> AliveProxy = WeakProxy.Pin())
+		if (const TSharedPtr<IJucePluginProxy> AliveProxy = WeakProxy.Pin())
 		{
 			ValueStringSet.Add(AliveProxy->GetNormalizedParameterValueAsText(ParameterName).ToString());
 		}
@@ -245,7 +245,7 @@ FReply FJucePluginAssetCustomization::OnOpenButtonClicked(TArray<TWeakObjectPtr<
 {
 	using namespace JucePluginAssetCustomizationInternal;
 
-	for (const UJuceHostedPluginAsset* PluginAsset : GetAlivePluginAssetObjects(WeakObjects))
+	for (const UJucePluginAsset* PluginAsset : GetAlivePluginAssetObjects(WeakObjects))
 	{
 		TSharedPtr<SJucePluginWindow> JucePluginWindow{ nullptr };
 

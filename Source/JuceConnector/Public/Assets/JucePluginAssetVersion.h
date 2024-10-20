@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-class FJuceHostedPluginAssetVersion
+class JUCECONNECTOR_API FJucePluginAssetVersion
 {
 public:
 	enum Type
@@ -14,5 +14,5 @@ public:
 
 	static const FGuid GUID;
 private:
-	FJuceHostedPluginAssetVersion() = delete;
+	FJucePluginAssetVersion() = delete;
 };

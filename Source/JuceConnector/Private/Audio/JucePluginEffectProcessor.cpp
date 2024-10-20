@@ -1,9 +1,9 @@
 ﻿#include "Audio/JucePluginEffectProcessor.h"
 
 #include "Juce/Utils/JuceMessageUtils.h"
-#include "Assets/JuceHostedPluginAsset.h"
+#include "Assets/JucePluginAsset.h"
 #include "Engine/AssetManager.h"
-#include "Juce/Plugins/JuceAudioProcessingHandle.h"
+#include "Juce/JuceAudioProcessingHandle.h"
 
 FJucePluginEffectProcessor::~FJucePluginEffectProcessor()
 {
@@ -16,14 +16,14 @@ FJucePluginEffectProcessor::~FJucePluginEffectProcessor()
 	}
 }
 
-void FJucePluginEffectProcessor::PrepareProcess(const TSoftObjectPtr<UJuceHostedPluginAsset>& InAsset)
+void FJucePluginEffectProcessor::PrepareProcess(const TSoftObjectPtr<UJucePluginAsset>& InAsset)
 {
 	SoftAsset = InAsset;
 
 	AudioProcessingHandle.Reset();
 	bProcessReadyFlag.clear();
 
-	if (const UJuceHostedPluginAsset* AliveAsset = SoftAsset.Get())
+	if (const UJucePluginAsset* AliveAsset = SoftAsset.Get())
 	{
 		SetProcessingHandleFromAsset(AliveAsset);
 	}
@@ -67,19 +67,19 @@ void FJucePluginEffectProcessor::OnPluginAssetLoadFinished()
 {
 	if (StreamableAssetHandle && StreamableAssetHandle->HasLoadCompleted())
 	{
-		const UJuceHostedPluginAsset* Asset = Cast<UJuceHostedPluginAsset>(StreamableAssetHandle->GetLoadedAsset());
+		const UJucePluginAsset* Asset = Cast<UJucePluginAsset>(StreamableAssetHandle->GetLoadedAsset());
 		SetProcessingHandleFromAsset(Asset);
 	}
 }
 
-void FJucePluginEffectProcessor::SetProcessingHandleFromAsset(const UJuceHostedPluginAsset* Asset)
+void FJucePluginEffectProcessor::SetProcessingHandleFromAsset(const UJucePluginAsset* Asset)
 {
 	if (!IsValid(Asset))
 	{
 		return;
 	}
 
-	if (const TSharedPtr<FJucePluginProxy> AliveProxy = Asset->GetPluginProxy().Pin())
+	if (const TSharedPtr<IJucePluginProxy> AliveProxy = Asset->GetPluginProxy().Pin())
 	{
 		JuceMessageUtils::ExecuteOnMessageThreadAsync([this, AliveProxy]() mutable
 		{

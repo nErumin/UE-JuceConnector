@@ -1,9 +1,9 @@
-﻿#include "Juce/Plugins/JucePluginProxy.h"
+﻿#include "Juce/JucePluginProxyImpl.h"
 
-#include "Juce/Plugins/JuceAudioProcessingHandle.h"
-#include "Juce/Plugins/JuceProcessorEditorHandle.h"
+#include "Juce/JuceAudioProcessingHandle.h"
+#include "Juce/JuceProcessorEditorHandle.h"
 
-#include "Juce/Internal/JucePluginLoader.h"
+#include "Juce/JucePluginLoader.h"
 #include "Juce/JuceHeader.h"
 #include "Juce/Utils/JuceConverters.h"
 

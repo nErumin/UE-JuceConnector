@@ -2,7 +2,7 @@
 #include "CoreMinimal.h"
 #include "Engine/StreamableManager.h"
 
-class UJuceHostedPluginAsset;
+class UJucePluginAsset;
 class IJuceAudioProcessingHandle;
 
 struct JUCECONNECTOR_API FJucePluginEffectProcessContext
@@ -16,16 +16,16 @@ class JUCECONNECTOR_API FJucePluginEffectProcessor : public TSharedFromThis<FJuc
 public:
 	~FJucePluginEffectProcessor();
 public:
-	void PrepareProcess(const TSoftObjectPtr<UJuceHostedPluginAsset>& InAsset);
+	void PrepareProcess(const TSoftObjectPtr<UJucePluginAsset>& InAsset);
 	bool IsPrepared() const;
 
 	void ProcessBlock(const TArrayView<const float>& InputBuffer, const TArrayView<float>& OutputBuffer, const FJucePluginEffectProcessContext& Context = FJucePluginEffectProcessContext{});
 	void Reset();
 private:
 	void OnPluginAssetLoadFinished();
-	void SetProcessingHandleFromAsset(const UJuceHostedPluginAsset* Asset);
+	void SetProcessingHandleFromAsset(const UJucePluginAsset* Asset);
 private:
-	TSoftObjectPtr<UJuceHostedPluginAsset> SoftAsset;
+	TSoftObjectPtr<UJucePluginAsset> SoftAsset;
 
 	TSharedPtr<IJuceAudioProcessingHandle> AudioProcessingHandle{ nullptr };
 	TSharedPtr<FStreamableHandle> StreamableAssetHandle{ nullptr };

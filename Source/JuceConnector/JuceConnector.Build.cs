@@ -1,5 +1,4 @@
 using System.IO;
-using Microsoft.Extensions.Logging;
 using UnrealBuildTool;
 
 public class JuceConnector : ModuleRules
@@ -20,26 +19,17 @@ public class JuceConnector : ModuleRules
 		PublicDependencyModuleNames.AddRange(new[]
 		{
 			"Core",
-			"DeveloperSettings",
+			"CoreUObject",
 			"AudioExtensions",
 			"MetasoundFrontend",
 			"MetasoundGraphCore",
-			"MetasoundStandardNodes"
+			"MetasoundStandardNodes",
+			"MetasoundEngine"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new[]
 		{
-			"Projects",
-			"InputCore",
-			"EditorFramework",
-			"UnrealEd",
-			"ToolMenus",
-			"CoreUObject",
-			"Engine",
-			"Slate",
-			"SlateCore",
-			"MetasoundEngine",
-			"MetasoundEditor"
+			"Engine"
 		});
 	}
 

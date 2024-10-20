@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Audio/JucePluginEffectProcessor.h"
 #include "Sound/SoundEffectSource.h"
-#include "Assets/JuceHostedPluginAsset.h"
+#include "Assets/JucePluginAsset.h"
 #include "JucePluginSourceEffect.generated.h"
 
 USTRUCT(BlueprintType)
@@ -12,7 +12,7 @@ struct JUCECONNECTOR_API FJucePluginSourceEffectSettings
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Plugin")
-	TSoftObjectPtr<UJuceHostedPluginAsset> PluginAsset;
+	TSoftObjectPtr<UJucePluginAsset> PluginAsset;
 };
 
 class JUCECONNECTOR_API FJucePluginSourceEffect final : public FSoundEffectSource

@@ -10,7 +10,7 @@
 
 #define LOCTEXT_NAMESPACE "FJucePluginMetasoundNode"
 
-namespace JucePluginMetasound
+namespace JuceConnectorMetasound
 {
 	using namespace Metasound;
 
@@ -48,7 +48,6 @@ namespace JucePluginMetasound
 		FOutputs Outputs;
 
 		float SampleRate;
-		int NumSamples;
 	};
 
 	class FProcessorNode final : public FNodeFacade

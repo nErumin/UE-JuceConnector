@@ -1,4 +1,4 @@
-﻿#include "Juce/Internal/JucePluginLoader.h"
+﻿#include "Juce/JucePluginLoader.h"
 #include "Juce/Utils/JuceConverters.h"
 #include "JuceConnectorLogCategory.h"
 

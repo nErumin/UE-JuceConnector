@@ -3,6 +3,10 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class JUCECONNECTOR_API IJuceConnectorModule : public IModuleInterface
+class IJucePluginFinder;
+
+class IJuceConnectorModule : public IModuleInterface
 {
+public:
+	virtual IJucePluginFinder& GetPluginFinder() = 0;
 };

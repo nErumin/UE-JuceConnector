@@ -2,11 +2,9 @@
 
 #include "MetasoundDataTypeRegistrationMacro.h"
 
-namespace Metasound
+namespace JuceConnectorMetasound
 {
-	DEFINE_METASOUND_DATA_TYPE(FJucePluginAssetData, "JucePluginAssetData");
-
-	FJucePluginAssetProxy::FJucePluginAssetProxy(const UJuceHostedPluginAsset* PluginAsset)
+	FJucePluginAssetProxy::FJucePluginAssetProxy(const UJucePluginAsset* PluginAsset)
 		: EffectProcessor{ MakeShared<FJucePluginEffectProcessor>() }
 	{
 		AsyncTask(ENamedThreads::GameThread, [Processor = EffectProcessor, PluginAsset]
@@ -45,3 +43,5 @@ namespace Metasound
 		return AssetProxy.Get();
 	}
 }
+
+DEFINE_METASOUND_DATA_TYPE(JuceConnectorMetasound::FJucePluginAssetData, "JucePluginAssetData");

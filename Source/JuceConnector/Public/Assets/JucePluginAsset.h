@@ -1,12 +1,10 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
-#include "Juce/Plugins/JucePluginProxy.h"
-#include "JuceHostedPluginAsset.generated.h"
+#include "Juce/JucePluginProxy.h"
+#include "JucePluginAsset.generated.h"
 
-class FJucePluginProxy;
-
-UCLASS(BlueprintType, EditInlineNew)
-class JUCECONNECTOR_API UJuceHostedPluginAsset : public UObject, public IAudioProxyDataFactory
+UCLASS(BlueprintType)
+class JUCECONNECTOR_API UJucePluginAsset : public UObject, public IAudioProxyDataFactory
 {
 	GENERATED_BODY()
 public:
@@ -18,7 +16,7 @@ public:
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 public:
-	TWeakPtr<FJucePluginProxy> GetPluginProxy() const;
+	TWeakPtr<IJucePluginProxy> GetPluginProxy() const;
 
 	FString GetPluginPath() const;
 	void SetPluginPath(const FString& NewPluginPath);
@@ -31,5 +29,5 @@ private:
 	FString PluginPath;
 
 	TArray<uint8> SerializedStateBlock;
-	mutable TSharedPtr<FJucePluginProxy> PluginProxy;
+	mutable TSharedPtr<IJucePluginProxy> PluginProxy;
 };

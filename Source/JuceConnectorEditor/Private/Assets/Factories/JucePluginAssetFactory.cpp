@@ -1,20 +1,20 @@
-﻿#include "Assets/Factories/JuceHostedPluginAssetFactory.h"
+﻿#include "Assets/Factories/JucePluginAssetFactory.h"
 
-#include "Assets/JuceHostedPluginAsset.h"
+#include "Assets/JucePluginAsset.h"
 #include "Settings/JucePluginScanSettings.h"
 #include "Widgets/JucePluginSelector.h"
 
-#define LOCTEXT_NAMESPACE "UJuceHostedPluginAssetFactory"
+#define LOCTEXT_NAMESPACE "UJucePluginAssetFactory"
 
-UJuceHostedPluginAssetFactory::UJuceHostedPluginAssetFactory()
+UJucePluginAssetFactory::UJucePluginAssetFactory()
 {
-	SupportedClass = UJuceHostedPluginAsset::StaticClass();
+	SupportedClass = UJucePluginAsset::StaticClass();
 
 	bCreateNew = true;
 	bEditAfterNew = false;
 }
 
-bool UJuceHostedPluginAssetFactory::ConfigureProperties()
+bool UJucePluginAssetFactory::ConfigureProperties()
 {
 	PreConfigureProperties();
 
@@ -33,7 +33,7 @@ bool UJuceHostedPluginAssetFactory::ConfigureProperties()
 		[
 			SNew(SJucePluginSelector)
 				.ScanDirectories(ScanDirectories)
-				.OnPluginSelected_UObject(this, &UJuceHostedPluginAssetFactory::OnTargetPluginSelected)
+				.OnPluginSelected_UObject(this, &UJucePluginAssetFactory::OnTargetPluginSelected)
 		]
 		+ SVerticalBox::Slot()
 			.AutoHeight()
@@ -48,7 +48,7 @@ bool UJuceHostedPluginAssetFactory::ConfigureProperties()
 			[
 				SNew(SButton)
 					.Text(LOCTEXT("OKLabel", "OK"))
-					.OnClicked_UObject(this, &UJuceHostedPluginAssetFactory::OnDecisionButtonClicked, false)
+					.OnClicked_UObject(this, &UJucePluginAssetFactory::OnDecisionButtonClicked, false)
 			]
 			+ SHorizontalBox::Slot()
 				.AutoWidth()
@@ -57,7 +57,7 @@ bool UJuceHostedPluginAssetFactory::ConfigureProperties()
 			[
 				SNew(SButton)
 					.Text(LOCTEXT("CancelLabel", "Cancel"))
-					.OnClicked_UObject(this, &UJuceHostedPluginAssetFactory::OnDecisionButtonClicked, true)
+					.OnClicked_UObject(this, &UJucePluginAssetFactory::OnDecisionButtonClicked, true)
 			]
 		]
 	];
@@ -68,37 +68,37 @@ bool UJuceHostedPluginAssetFactory::ConfigureProperties()
 	return !TargetPluginPath.IsEmpty();
 }
 
-UObject* UJuceHostedPluginAssetFactory::FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn)
+UObject* UJucePluginAssetFactory::FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn)
 {
 	if (TargetPluginPath.IsEmpty())
 	{
 		return nullptr;
 	}
 
-	UJuceHostedPluginAsset* Asset = NewObject<UJuceHostedPluginAsset>(InParent, InClass, InName, Flags);
+	UJucePluginAsset* Asset = NewObject<UJucePluginAsset>(InParent, InClass, InName, Flags);
 	check(Asset);
 
 	Asset->SetPluginPath(TargetPluginPath);
 	return Asset;
 }
 
-void UJuceHostedPluginAssetFactory::PreConfigureProperties()
+void UJucePluginAssetFactory::PreConfigureProperties()
 {
 	PluginPickerWindow.Reset();
 	TargetPluginPath.Empty();
 }
 
-void UJuceHostedPluginAssetFactory::PostConfigureProperties()
+void UJucePluginAssetFactory::PostConfigureProperties()
 {
 	PluginPickerWindow.Reset();
 }
 
-void UJuceHostedPluginAssetFactory::OnTargetPluginSelected(const FString& SelectedPluginPath)
+void UJucePluginAssetFactory::OnTargetPluginSelected(const FString& SelectedPluginPath)
 {
 	TargetPluginPath = SelectedPluginPath;
 }
 
-FReply UJuceHostedPluginAssetFactory::OnDecisionButtonClicked(bool bCancelRequested)
+FReply UJucePluginAssetFactory::OnDecisionButtonClicked(bool bCancelRequested)
 {
 	if (bCancelRequested)
 	{

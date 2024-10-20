@@ -10,14 +10,8 @@ class FJuceConnectorModule final : public IJuceConnectorModule
 public:
 	virtual void ShutdownModule() override;
 	virtual void StartupModule() override;
+
+	virtual IJucePluginFinder& GetPluginFinder() override;
 private:
-	void RegisterAssetTypeActions();
-	void UnregisterAssetTypeActions();
-
-	void RegisterTypeCustomizations();
-	void UnregisterTypeCustomizations();
-
 	void RegisterAudioProcessTypes();
-private:
-	TArray<TSharedRef<IAssetTypeActions>> RegisteredAssetTypeActions;
 };

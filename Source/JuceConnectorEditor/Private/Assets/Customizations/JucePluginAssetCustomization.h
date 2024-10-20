@@ -2,7 +2,7 @@
 #include "CoreMinimal.h"
 #include "IDetailCustomization.h"
 
-class FJucePluginProxy;
+class IJucePluginProxy;
 
 class FJucePluginAssetCustomization : public IDetailCustomization
 {
@@ -14,11 +14,11 @@ private:
 	void CustomizePathProperty(IDetailLayoutBuilder& DetailBuilder);
 	void CustomizePluginParameterCategory(IDetailLayoutBuilder& DetailBuilder);
 
-	bool IsParameterSliderEnabled(FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies) const;
-	float GetParameterSliderValue(FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies) const;
-	void OnParameterSliderValueChanged(float NewValue, FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies);
+	bool IsParameterSliderEnabled(FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies) const;
+	float GetParameterSliderValue(FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies) const;
+	void OnParameterSliderValueChanged(float NewValue, FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies);
 
-	FText GetParameterValueText(FString ParameterName, TArray<TWeakPtr<FJucePluginProxy>> WeakProxies) const;
+	FText GetParameterValueText(FString ParameterName, TArray<TWeakPtr<IJucePluginProxy>> WeakProxies) const;
 private:
 	FReply OnOpenButtonClicked(TArray<TWeakObjectPtr<UObject>> WeakObjects);
 };

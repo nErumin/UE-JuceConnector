@@ -6,7 +6,7 @@
 
 #define LOCTEXT_NAMESPACE "FJucePluginMetasoundNode"
 
-namespace JucePluginMetasound
+namespace JuceConnectorMetasound
 {
 	namespace Params
 	{

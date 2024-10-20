@@ -1,7 +1,7 @@
 ﻿#include "JucePluginSelector.h"
 
-#include "JuceConnectorLogCategory.h"
-#include "Juce/Internal/JucePluginLoader.h"
+#include "JuceConnectorModules.h"
+#include "Juce/JucePluginFinder.h"
 #include "Style/JuceConnectorStyle.h"
 
 #define LOCTEXT_NAMESPACE "SJucePluginSelector"
@@ -72,7 +72,7 @@ TSharedRef<SWidget> SJucePluginSelector::GetComboButtonMenuWidget()
 
 	FMenuBuilder Builder{ true, nullptr };
 	Builder.AddSearchWidget();
-	
+
 	for (const FString& PluginEntry : CachedPluginEntries)
 	{
 		Builder.AddMenuEntry
@@ -92,7 +92,8 @@ TSharedRef<SWidget> SJucePluginSelector::GetComboButtonMenuWidget()
 
 void SJucePluginSelector::ConstructPluginEntries()
 {
-	CachedPluginEntries = FJucePluginLoader::Get().FindPlugins(ScanDirectories);
+	IJuceConnectorModule& JuceConnectorModule = FModuleManager::GetModuleChecked<IJuceConnectorModule>("JuceConnector");
+	CachedPluginEntries = JuceConnectorModule.GetPluginFinder().FindPlugins(ScanDirectories);
 }
 
 FReply SJucePluginSelector::OnRefreshButtonClicked()

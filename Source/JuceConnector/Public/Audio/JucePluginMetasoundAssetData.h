@@ -2,22 +2,21 @@
 
 #include "CoreMinimal.h"
 #include "MetasoundDataReferenceMacro.h"
-#include "MetasoundFrontendDataTypeTraits.h"
-#include "Assets/JuceHostedPluginAsset.h"
+#include "Assets/JucePluginAsset.h"
 #include "Audio/JucePluginEffectProcessor.h"
 
 #define LOCTEXT_NAMESPACE "FJucePluginMetasoundNode"
 
-class UJuceHostedPluginAsset;
+class UJucePluginAsset;
 
-namespace Metasound
+namespace JuceConnectorMetasound
 {
 	class JUCECONNECTOR_API FJucePluginAssetProxy final : public Audio::TProxyData<FJucePluginAssetProxy>
 	{
 	public:
 		IMPL_AUDIOPROXY_CLASS(FJucePluginAssetProxy)
 	public:
-		explicit FJucePluginAssetProxy(const UJuceHostedPluginAsset* PluginAsset);
+		explicit FJucePluginAssetProxy(const UJucePluginAsset* PluginAsset);
 	public:
 		FJucePluginEffectProcessor& GetProcessor();
 	private:
@@ -44,8 +43,8 @@ namespace Metasound
 	private:
 		TSharedPtr<FJucePluginAssetProxy> AssetProxy;
 	};
-
-	DECLARE_METASOUND_DATA_REFERENCE_TYPES(FJucePluginAssetData, JUCECONNECTOR_API, FJucePluginAssetDataTypeInfo, FJucePluginAssetDataReadRef, FJucePluginAssetDataWriteRef);
 }
+
+DECLARE_METASOUND_DATA_REFERENCE_TYPES(JuceConnectorMetasound::FJucePluginAssetData, JUCECONNECTOR_API, FJucePluginAssetDataTypeInfo, FJucePluginAssetDataReadRef, FJucePluginAssetDataWriteRef);
 
 #undef LOCTEXT_NAMESPACE

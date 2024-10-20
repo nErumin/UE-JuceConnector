@@ -17,7 +17,12 @@
 	"Modules": [
 		{
 			"Name": "JuceConnector",
-			"Type": "Editor",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "JuceConnectorEditor",
+			"Type": "EditorNoCommandlet",
 			"LoadingPhase": "Default"
 		}
 	],

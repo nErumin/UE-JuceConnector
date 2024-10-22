@@ -11,16 +11,20 @@ void FJucePluginSubmixEffect::OnPresetChanged()
 	ensure(!IsInGameThread());
 	GET_EFFECT_SETTINGS(JucePluginSubmixEffect)
 
-	if (const UJucePluginAsset* PluginAsset = Settings.PluginAsset)
+	EffectProcessor.SetProcessingHandle(nullptr);
+
+	if (!Settings.PluginAsset)
+	{
+		return;
+	}
+
+	JuceMessageUtils::ExecuteOnMessageThread([this, PluginAsset = Settings.PluginAsset]
 	{
 		if (const TSharedPtr<IJucePluginProxy> AliveProxy = PluginAsset->GetPluginProxy().Pin())
 		{
 			EffectProcessor.SetProcessingHandle(AliveProxy->BorrowProcessingHandle());
-			return;
 		}
-	}
-
-	EffectProcessor.SetProcessingHandle(nullptr);
+	});
 }
 
 void FJucePluginSubmixEffect::OnProcessAudio(const FSoundEffectSubmixInputData& InData, FSoundEffectSubmixOutputData& OutData)

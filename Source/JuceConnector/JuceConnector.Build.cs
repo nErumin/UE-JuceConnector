@@ -37,8 +37,9 @@ public class JuceConnector : ModuleRules
 
 	private void InjectJuceDependencies()
 	{
-		/* RTTI is required to compile the JUCE source codes. */
+		/* Both RTTI and exceptions are required to compile the JUCE source codes. */
 		bUseRTTI = true;
+		bEnableExceptions = true;
 
 		var juceDirectory = Path.Combine(ThirdPartyDirectory, "JUCE");
 

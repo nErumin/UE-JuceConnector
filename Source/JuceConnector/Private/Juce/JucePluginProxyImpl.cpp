@@ -443,7 +443,10 @@ private:
 		{
 			RootInstance = JucePluginProxyInternals::FManagedPluginInstance::Create(PluginPath);
 
-			RootInstance->GetProcessorListener().ParameterChanged.AddRaw(this, &FImpl::OnRootParameterChanged);
+			if (RootInstance)
+			{
+				RootInstance->GetProcessorListener().ParameterChanged.AddRaw(this, &FImpl::OnRootParameterChanged);
+			}
 		}
 
 		return RootInstance;

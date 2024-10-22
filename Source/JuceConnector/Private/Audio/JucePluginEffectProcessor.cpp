@@ -20,10 +20,10 @@ void FJucePluginEffectProcessor::ProcessBlock(const TArrayView<const float>& Inp
 	{
 		if (!AliveProcessingHandle->IsPrepared())
 		{
-			AliveProcessingHandle->Prepare(Context.SampleRate, Context.NumChannel, InputBuffer.Num());
+			AliveProcessingHandle->Prepare(Context.SampleRate, InputBuffer.Num());
 		}
 
-		AliveProcessingHandle->ProcessBlock(InputBuffer, OutputBuffer);
+		AliveProcessingHandle->ProcessBlock(InputBuffer, OutputBuffer, Context.NumChannel);
 	}
 }
 

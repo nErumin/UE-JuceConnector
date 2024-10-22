@@ -1,5 +1,8 @@
 ﻿#include "Juce/JucePluginProxyImpl.h"
 
+#include "AudioMixerDevice.h"
+#include "DSP/BufferVectorOperations.h"
+
 #include "Juce/JuceAudioProcessingHandle.h"
 #include "Juce/JuceProcessorEditorHandle.h"
 
@@ -246,33 +249,42 @@ namespace JucePluginProxyInternals
 		{
 		}
 	public:
-		virtual void Prepare(float SampleRate, int NumChannels, int MaxExpectedSamplesPerBlock) override
+		virtual void Prepare(float SampleRate, int MaxExpectedSamplesPerBlock) override
 		{
 			if (ManagedInstance)
 			{
 				ManagedInstance->GetInternalPlugin()->prepareToPlay(SampleRate, MaxExpectedSamplesPerBlock);
-				PreparedNumChannels = NumChannels;
+				bPrepared.test_and_set();
 			}
 		}
 
 		virtual bool IsPrepared() const override
 		{
-			return PreparedNumChannels.IsSet();
+			return bPrepared.test();
 		}
 
-		virtual void ProcessBlock(const TArrayView<const float>& InputBuffer, const TArrayView<float>& OutputBuffer) override
+		virtual void ProcessBlock(const TArrayView<const float>& InputBuffer, const TArrayView<float>& OutputBuffer, int NumChannels) override
 		{
 			if (ManagedInstance && IsPrepared())
 			{
-				const int NumSamples = InputBuffer.Num() / *PreparedNumChannels;
+				const int NumSamples = InputBuffer.Num() / NumChannels;
+				const int NumUnrealChannels = NumChannels;
+				const int NumJuceChannels = GetRequiredNumChannels();
 
-				juce::AudioBuffer<float> SampleBuffer{ *PreparedNumChannels, NumSamples };
+				Audio::FAlignedFloatBuffer ChannelMap;
+				Audio::FMixerDevice::Get2DChannelMap(false, NumUnrealChannels, NumJuceChannels, false, ChannelMap);
+
+				Audio::FAlignedFloatBuffer MixedInputBuffer;
+				MixedInputBuffer.AddZeroed(NumJuceChannels * NumSamples);
+
+				Audio::DownmixBuffer(NumUnrealChannels, NumJuceChannels, InputBuffer.GetData(), MixedInputBuffer.GetData(), NumSamples, ChannelMap.GetData());
+
+				juce::AudioBuffer<float> SampleBuffer = JuceConverters::FromUnrealBuffer(MixedInputBuffer, NumJuceChannels);
 				juce::MidiBuffer MidiBuffer;
-
-				JuceConverters::FillJuceBuffer(SampleBuffer, InputBuffer, *PreparedNumChannels);
 				ManagedInstance->GetInternalPlugin()->processBlock(SampleBuffer, MidiBuffer);
 
-				JuceConverters::FillUnrealAudioBuffer(OutputBuffer, SampleBuffer);
+				Audio::FAlignedFloatBuffer ConvertedJuceBuffer = JuceConverters::ToUnrealBuffer(SampleBuffer);
+				Audio::DownmixBuffer(NumJuceChannels, NumUnrealChannels, ConvertedJuceBuffer.GetData(), OutputBuffer.GetData(), NumSamples, ChannelMap.GetData());
 			}
 		}
 
@@ -281,12 +293,27 @@ namespace JucePluginProxyInternals
 			if (ManagedInstance)
 			{
 				ManagedInstance->GetInternalPlugin()->reset();
-				PreparedNumChannels = NullOpt;
 			}
+
+			bPrepared.clear();
+		}
+	private:
+		int GetRequiredNumChannels() const
+		{
+			if (ManagedInstance)
+			{
+				return FMath::Max
+				(
+					ManagedInstance->GetInternalPlugin()->getTotalNumInputChannels(),
+					ManagedInstance->GetInternalPlugin()->getTotalNumOutputChannels()
+				);
+			}
+
+			return 2;
 		}
 	private:
 		TSharedPtr<FManagedPluginInstance> ManagedInstance;
-		TOptional<int> PreparedNumChannels{ NullOpt };
+		std::atomic_flag bPrepared;
 	};
 }
 

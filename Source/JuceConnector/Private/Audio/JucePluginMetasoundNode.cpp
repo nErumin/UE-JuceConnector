@@ -96,7 +96,7 @@ namespace JuceConnectorMetasound
 				const FJucePluginEffectProcessContext Context
 				{
 					.SampleRate = SampleRate,
-					.NumChannel = 2
+					.NumChannel = 1
 				};
 
 				Processor.ProcessBlock(*InputBuffer, *OutputBuffer, Context);

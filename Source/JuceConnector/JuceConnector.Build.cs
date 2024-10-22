@@ -21,6 +21,7 @@ public class JuceConnector : ModuleRules
 			"Core",
 			"CoreUObject",
 			"AudioExtensions",
+			"SignalProcessing",
 			"MetasoundFrontend",
 			"MetasoundGraphCore",
 			"MetasoundStandardNodes",
@@ -29,7 +30,8 @@ public class JuceConnector : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new[]
 		{
-			"Engine"
+			"Engine",
+			"AudioMixer"
 		});
 	}
 

@@ -27,8 +27,10 @@ namespace JuceConverters
 		return juce::Array<TElement>{ UnrealArray.GetData(), UnrealArray.Num() };
 	}
 
-	inline void FillJuceBuffer(juce::AudioBuffer<float>& JuceBuffer, const TArrayView<const float>& UnrealBuffer, int NumChannels)
+	inline juce::AudioBuffer<float> FromUnrealBuffer(const TArrayView<const float>& UnrealBuffer, int NumChannels)
 	{
+		juce::AudioBuffer<float> JuceBuffer{ NumChannels, UnrealBuffer.Num() / NumChannels };
+
 		const int NumSamples = UnrealBuffer.Num();
 		const float* RawUnrealBuffer = UnrealBuffer.GetData();
 
@@ -41,10 +43,15 @@ namespace JuceConverters
 				JuceBuffer.setSample(Channel, SampleIndex, RawUnrealBuffer[Index + Channel]);
 			}
 		}
+
+		return JuceBuffer;
 	}
 
-	inline void FillUnrealAudioBuffer(const TArrayView<float>& UnrealBuffer, const juce::AudioBuffer<float>& JuceBuffer)
+	inline Audio::FAlignedFloatBuffer ToUnrealBuffer(const juce::AudioBuffer<float>& JuceBuffer)
 	{
+		Audio::FAlignedFloatBuffer UnrealBuffer;
+		UnrealBuffer.AddZeroed(JuceBuffer.getNumChannels() * JuceBuffer.getNumSamples());
+
 		float* RawUnrealBuffer = UnrealBuffer.GetData();
 
 		const int NumSamples = JuceBuffer.getNumSamples();
@@ -58,5 +65,7 @@ namespace JuceConverters
 				RawUnrealBuffer[InterleavedBaseIndex + Channel] = JuceBuffer.getSample(Channel, SampleIndex);
 			}
 		}
+
+		return UnrealBuffer;
 	}
 }

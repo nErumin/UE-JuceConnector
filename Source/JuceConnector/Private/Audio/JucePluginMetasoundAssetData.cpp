@@ -4,18 +4,20 @@
 
 namespace JuceConnectorMetasound
 {
-	FJucePluginAssetProxy::FJucePluginAssetProxy(const UJucePluginAsset* PluginAsset)
-		: EffectProcessor{ MakeShared<FJucePluginEffectProcessor>() }
+	FJucePluginAssetProxy::FJucePluginAssetProxy(UJucePluginAsset* PluginAsset)
 	{
-		AsyncTask(ENamedThreads::GameThread, [Processor = EffectProcessor, PluginAsset]
+		if (IsValid(PluginAsset))
 		{
-			Processor->PrepareProcess(PluginAsset);
-		});
+			if (const TSharedPtr<IJucePluginProxy> AliveProxy = PluginAsset->GetPluginProxy().Pin())
+			{
+				EffectProcessor.SetProcessingHandle(AliveProxy->BorrowProcessingHandle());
+			}
+		}
 	}
 
 	FJucePluginEffectProcessor& FJucePluginAssetProxy::GetProcessor()
 	{
-		return EffectProcessor.Get();
+		return EffectProcessor;
 	}
 
 	FJucePluginAssetData::FJucePluginAssetData(const TSharedPtr<Audio::IProxyData>& InInitData)

@@ -12,7 +12,7 @@ struct JUCECONNECTOR_API FJucePluginSourceEffectSettings
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Plugin")
-	TSoftObjectPtr<UJucePluginAsset> PluginAsset;
+	TObjectPtr<UJucePluginAsset> PluginAsset;
 };
 
 class JUCECONNECTOR_API FJucePluginSourceEffect final : public FSoundEffectSource
@@ -26,7 +26,7 @@ private:
 	float SampleRate{ 44100.0f };
 	int NumChannel{ 2 };
 
-	TSharedPtr<FJucePluginEffectProcessor> EffectProcessor{ nullptr };
+	FJucePluginEffectProcessor EffectProcessor;
 };
 
 UCLASS(BlueprintType, meta = (BlueprintSpawnableComponent))
@@ -37,6 +37,6 @@ class JUCECONNECTOR_API UJucePluginSourceEffectPreset : public USoundEffectSourc
 public:
 	EFFECT_PRESET_METHODS(JucePluginSourceEffect)
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SubmixEffectPreset)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SourceEffectPreset)
 	FJucePluginSourceEffectSettings Settings;
 };

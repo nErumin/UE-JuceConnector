@@ -23,7 +23,7 @@ namespace JuceMessageUtils
 	}
 
 	template <typename TCallable, typename... TArgs>
-	TFuture<TInvokeResult_T<TCallable, TArgs...>> ExecuteOnMessageThreadAsync(TCallable Callable, TArgs&&... Args)
+	TFuture<TInvokeResult_T<TCallable, TArgs...>> ExecuteOnMessageThread(TCallable Callable, TArgs&&... Args)
 		requires !std::is_same_v<TInvokeResult_T<TCallable, TArgs...>, void>
 	{
 		using TResult = TInvokeResult_T<TCallable, TArgs...>;
@@ -46,7 +46,7 @@ namespace JuceMessageUtils
 	}
 
 	template <typename TCallable, typename... TArgs>
-	TFuture<void> ExecuteOnMessageThreadAsync(TCallable Callable, TArgs&&... Args)
+	TFuture<void> ExecuteOnMessageThread(TCallable Callable, TArgs&&... Args)
 		requires std::is_same_v<TInvokeResult_T<TCallable, TArgs...>, void>
 	{
 		TSharedRef<TPromise<void>> Promise = MakeShared<TPromise<void>>();

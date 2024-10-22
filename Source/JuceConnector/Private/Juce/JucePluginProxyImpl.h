@@ -23,7 +23,7 @@ public:
 	virtual FJucePluginParameterChanged& OnPluginParameterChanged() override;
 
 	virtual TSharedRef<IJuceProcessorEditorHandle> GetEditorHandle() const override;
-	virtual TSharedRef<IJuceAudioProcessingHandle> CreateNewProcessingHandle() const override;
+	virtual TWeakPtr<IJuceAudioProcessingHandle> BorrowProcessingHandle() const override;
 
 	virtual TArray<uint8> GetState() const override;
 	virtual void SetState(const TArray<uint8>& StateMemoryBlock) override;

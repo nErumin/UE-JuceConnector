@@ -12,7 +12,7 @@ struct JUCECONNECTOR_API FJucePluginSubmixEffectSettings
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Plugin")
-	TSoftObjectPtr<UJucePluginAsset> PluginAsset;
+	TObjectPtr<UJucePluginAsset> PluginAsset;
 };
 
 class JUCECONNECTOR_API FJucePluginSubmixEffect final : public FSoundEffectSubmix
@@ -25,7 +25,7 @@ public:
 private:
 	float SampleRate{ 44100.0f };
 
-	TSharedPtr<FJucePluginEffectProcessor> EffectProcessor{ nullptr };
+	FJucePluginEffectProcessor EffectProcessor;
 };
 
 UCLASS(BlueprintType)

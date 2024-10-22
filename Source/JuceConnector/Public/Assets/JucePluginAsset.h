@@ -17,6 +17,7 @@ public:
 	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 public:
 	TWeakPtr<IJucePluginProxy> GetPluginProxy() const;
+	TWeakPtr<IJuceAudioProcessingHandle> GetShareableAudioProcessingHandle() const;
 
 	FString GetPluginPath() const;
 	void SetPluginPath(const FString& NewPluginPath);
@@ -29,5 +30,6 @@ private:
 	FString PluginPath;
 
 	TArray<uint8> SerializedStateBlock;
+
 	mutable TSharedPtr<IJucePluginProxy> PluginProxy;
 };

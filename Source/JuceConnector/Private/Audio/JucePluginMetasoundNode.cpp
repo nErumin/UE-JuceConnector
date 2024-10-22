@@ -86,12 +86,12 @@ namespace JuceConnectorMetasound
 
 	void FProcessOperator::Execute()
 	{
+		const FAudioBuffer* InputBuffer = Inputs.AudioInput.Get();
+		FAudioBuffer* OutputBuffer = Outputs.AudioOutput.Get();
+
 		if (const TSharedPtr<FJucePluginAssetProxy> AssetProxy = Inputs.PluginAsset->GetProxy())
 		{
-			const FAudioBuffer* InputBuffer = Inputs.AudioInput.Get();
-			FAudioBuffer* OutputBuffer = Outputs.AudioOutput.Get();
-
-			if (FJucePluginEffectProcessor& Processor = AssetProxy->GetProcessor(); Processor.IsPrepared())
+			if (FJucePluginEffectProcessor& Processor = AssetProxy->GetProcessor(); Processor.HasProcessingHandle())
 			{
 				const FJucePluginEffectProcessContext Context
 				{
@@ -100,12 +100,11 @@ namespace JuceConnectorMetasound
 				};
 
 				Processor.ProcessBlock(*InputBuffer, *OutputBuffer, Context);
-			}
-			else
-			{
-				FMemory::Memcpy(OutputBuffer->GetData(), InputBuffer->GetData(), sizeof(float) * OutputBuffer->Num());
+				return;
 			}
 		}
+
+		FMemory::Memcpy(OutputBuffer->GetData(), InputBuffer->GetData(), sizeof(float) * OutputBuffer->Num());
 	}
 
 	void FProcessOperator::Reset(const IOperator::FResetParams& InParams)

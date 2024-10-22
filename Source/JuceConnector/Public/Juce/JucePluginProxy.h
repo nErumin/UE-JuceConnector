@@ -29,7 +29,7 @@ public:
 	virtual FJucePluginParameterChanged& OnPluginParameterChanged() = 0;
 
 	virtual TSharedRef<IJuceProcessorEditorHandle> GetEditorHandle() const = 0;
-	virtual TSharedRef<IJuceAudioProcessingHandle> CreateNewProcessingHandle() const = 0;
+	virtual TWeakPtr<IJuceAudioProcessingHandle> BorrowProcessingHandle() const = 0;
 
 	virtual TArray<uint8> GetState() const = 0;
 	virtual void SetState(const TArray<uint8>& StateMemoryBlock) = 0;

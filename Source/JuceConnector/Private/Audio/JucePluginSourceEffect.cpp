@@ -6,8 +6,6 @@ void FJucePluginSourceEffect::Init(const FSoundEffectSourceInitData& InInitData)
 {
 	SampleRate = InInitData.SampleRate;
 	NumChannel = InInitData.NumSourceChannels;
-
-	EffectProcessor = MakeShared<FJucePluginEffectProcessor>();
 }
 
 void FJucePluginSourceEffect::OnPresetChanged()
@@ -15,19 +13,28 @@ void FJucePluginSourceEffect::OnPresetChanged()
 	ensure(!IsInGameThread());
 	GET_EFFECT_SETTINGS(JucePluginSourceEffect)
 
-	EffectProcessor->PrepareProcess(Settings.PluginAsset);
+	if (const UJucePluginAsset* PluginAsset = Settings.PluginAsset)
+	{
+		if (const TSharedPtr<IJucePluginProxy> AliveProxy = PluginAsset->GetPluginProxy().Pin())
+		{
+			EffectProcessor.SetProcessingHandle(AliveProxy->BorrowProcessingHandle());
+			return;
+		}
+	}
+
+	EffectProcessor.SetProcessingHandle(nullptr);
 }
 
 void FJucePluginSourceEffect::ProcessAudio(const FSoundEffectSourceInputData& InData, float* OutAudioBufferData)
 {
-	if (!EffectProcessor || !EffectProcessor->IsPrepared())
+	if (!EffectProcessor.HasProcessingHandle())
 	{
 		// Sorry, we're not ready yet!
 		FMemory::Memcpy(OutAudioBufferData, InData.InputSourceEffectBufferPtr, InData.NumSamples * sizeof(float));
 		return;
 	}
 
-	EffectProcessor->ProcessBlock
+	EffectProcessor.ProcessBlock
 	(
 		MakeArrayView(InData.InputSourceEffectBufferPtr, InData.NumSamples),
 		MakeArrayView(OutAudioBufferData, InData.NumSamples),

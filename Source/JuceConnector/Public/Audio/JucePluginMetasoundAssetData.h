@@ -16,11 +16,11 @@ namespace JuceConnectorMetasound
 	public:
 		IMPL_AUDIOPROXY_CLASS(FJucePluginAssetProxy)
 	public:
-		explicit FJucePluginAssetProxy(const UJucePluginAsset* PluginAsset);
+		explicit FJucePluginAssetProxy(UJucePluginAsset* PluginAsset);
 	public:
 		FJucePluginEffectProcessor& GetProcessor();
 	private:
-		TSharedRef<FJucePluginEffectProcessor> EffectProcessor;
+		FJucePluginEffectProcessor EffectProcessor;
 	};
 
 	class JUCECONNECTOR_API FJucePluginAssetData final

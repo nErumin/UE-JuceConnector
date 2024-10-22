@@ -397,16 +397,17 @@ public:
 		return MakeShared<JucePluginProxyInternals::FJuceProcessorEditorHandle>(nullptr);
 	}
 
-	TSharedRef<JucePluginProxyInternals::FJuceAudioProcessingHandle> CreateNewProcessingHandle() const
+	TSharedPtr<IJuceAudioProcessingHandle> CreateNewProcessingHandle()
 	{
 		using namespace JucePluginProxyInternals;
 
 		if (const TSharedPtr<FManagedPluginInstance> Root = GetRootInstance())
 		{
-			return MakeShared<FJuceAudioProcessingHandle>(FManagedPluginInstance::Create(PluginPath, Root));
+			const TSharedRef<IJuceAudioProcessingHandle> NewHandle = MakeShared<FJuceAudioProcessingHandle>(FManagedPluginInstance::Create(PluginPath, Root));
+			return ProcessingHandles.Add_GetRef(NewHandle);
 		}
 
-		return MakeShared<FJuceAudioProcessingHandle>(nullptr);
+		return nullptr;
 	}
 private:
 	TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> GetRootInstance() const
@@ -437,6 +438,7 @@ private:
 	}
 private:
 	FString PluginPath;
+	TArray<TSharedRef<IJuceAudioProcessingHandle>> ProcessingHandles;
 
 	mutable TSharedPtr<JucePluginProxyInternals::FManagedPluginInstance> RootInstance{ nullptr };
 	FJucePluginParameterChanged RootParameterChanged;
@@ -506,7 +508,7 @@ TSharedRef<IJuceProcessorEditorHandle> FJucePluginProxy::GetEditorHandle() const
 	return Impl->GetProcessorEditorHandle();
 }
 
-TSharedRef<IJuceAudioProcessingHandle> FJucePluginProxy::CreateNewProcessingHandle() const
+TWeakPtr<IJuceAudioProcessingHandle> FJucePluginProxy::BorrowProcessingHandle() const
 {
 	return Impl->CreateNewProcessingHandle();
 }

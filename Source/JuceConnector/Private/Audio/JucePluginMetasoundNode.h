@@ -55,23 +55,6 @@ namespace JuceConnectorMetasound
 	public:
 		explicit FProcessorNode(const FNodeInitData& InitData);
 	};
-
-	class FPluginAssetProxy final : public Audio::TProxyData<FPluginAssetProxy>
-	{
-	public:
-		IMPL_AUDIOPROXY_CLASS(FPluginAssetProxy)
-	};
-
-	class FPluginAssetData final
-	{
-	public:
-		explicit FPluginAssetData(const TSharedPtr<Audio::IProxyData>& InInitData)
-			: AssetProxy{ StaticCastSharedPtr<FPluginAssetProxy>(InInitData) }
-		{
-		}
-	private:
-		TSharedPtr<FPluginAssetProxy> AssetProxy;
-	};
 }
 
 #undef LOCTEXT_NAMESPACE
